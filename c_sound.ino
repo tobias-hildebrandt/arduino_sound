@@ -7,70 +7,53 @@
 
 #define byte char
 
-#define lowA -3
-#define lowB -1
-#define C 0 
-#define D 2
-#define E 4
-#define F 5
-#define G 7
-#define A 9
-#define B 11
-#define highC 12
-#define N -999
-#define END_NOTE -9999
+#define no_note 31
+#define end_note -31
+struct Note {
+    signed byte tone:6; // half steps away from middle C, -31 to +31, see special cases
+    byte length:4; // 0 = 1/32, 1 = 1/16, 2 = 1/8, 3 = 1/4, 4 = 1/2, 5 = 1, 6 = 2, 7 = 4, 8 = 8
+};
+
+const struct Note NOTE_C = Note { .tone = 0, .length = 3};
+const struct Note NOTE_D = Note { .tone = 2, .length = 3};
+const struct Note NOTE_E = Note { .tone = 4, .length = 3};
+const struct Note NOTE_F = Note { .tone = 5, .length = 3};
+const struct Note NOTE_G = Note { .tone = 7, .length = 3};
+const struct Note NOTE_A = Note { .tone = 9, .length = 3};
+const struct Note NOTE_B = Note { .tone = 11, .length = 3};
+const struct Note NOTE_C_HIGH = Note { .tone = 12, .length = 3};
+const struct Note NOTE_REST_FOURTH = Note { .tone = no_note, .length = 3};
+const struct Note NOTE_END = Note { .tone = end_note, .length = 3};
+
+const struct Note* C = &NOTE_C;
+const struct Note* D = &NOTE_D;
+const struct Note* E = &NOTE_E;
+const struct Note* F = &NOTE_F;
+const struct Note* G = &NOTE_G;
+const struct Note* A = &NOTE_A;
+const struct Note* B = &NOTE_B;
+const struct Note* C_HIGH = &NOTE_C_HIGH;
+const struct Note* REST_FOURTH = &NOTE_REST_FOURTH;
+const struct Note* END = &NOTE_END;
+
 
 // fn = f0 * (a)n
-const double middle_C = 440;
+const double middle_C_frequency = 440;
 const double math_A = pow(2, 1./12.);
-double note(int half_steps_from_c) {
-    unsigned int frequency = middle_C * pow(math_A, half_steps_from_c);
-    return min(frequency, 1000);
+double note_frequency(int half_steps_from_c) {
+    unsigned int frequency = middle_C_frequency * pow(math_A, half_steps_from_c);
+    return frequency;
 }
 
-const unsigned int scale[] = {
-    C, D, E, F, G, A, B, highC, END_NOTE
+const struct Note* scale[] = {
+    C, D, E, F, G, A, B, C_HIGH, END
 };
 
-const unsigned int mary[] = {
-    E, D, C, D, E, E, E, N, 
-    D, D, D, N, E, G, G, N,
+const struct Note* mary[] = {
+    E, D, C, D, E, E, E, REST_FOURTH, 
+    D, D, D, REST_FOURTH, E, G, G, REST_FOURTH,
     E, D, C, D, E, E, E, E, 
-    D, D, E, D, C, END_NOTE
-};
-
-void play_song(unsigned int *song) {
-    for(int i =0;; i++) {
-        // stop playing the note
-        noTone(OUTPUT_PIN);
-
-        // write debug pin
-        digitalWrite(INTERNAL_PIN, i%2);
-
-        // if we need to end
-        if (song[i] == END_NOTE) {
-            break;
-        } 
-        // else if we actually have a note to play
-        else if (song[i] != N) {
-            tone(OUTPUT_PIN, note(song[i]));
-        }
-
-        // delay 
-        delay(DELAY);
-    }
-}
-
-
-// const unsigned int tones[] = {
-//     262,294,330,349,392,440,494,524
-// };
-
-
-#define no_note 63
-struct Note {
-    byte tone; // 0-11 octave 0, 12-23 octave 1, 24-35 octave 2, 36-47 octave 3, 48-59 octave 4, 63 = no_note
-    byte length:4; // 0 = 1/32, 1 = 1/16, 2 = 1/8, 3 = 1/4, 4 = 1/2, 5 = 1, 6 = 2, 7 = 4, 8 = 8
+    D, D, E, D, C, END
 };
 
 unsigned long get_delay(byte length, double tempo) {
@@ -89,39 +72,48 @@ unsigned long get_delay(byte length, double tempo) {
         case 8: fraction = 8;
     }
 
-    return (unsigned long)((fraction * tempo));
+    return (unsigned long)((fraction * 4 * 1000 / tempo)); // assume time signature denominator of 4
 }
 
 void play_note(struct Note *n, double tempo) {
     noTone(OUTPUT_PIN);
     if (n->tone != no_note) {
         // digitalWrite(INTERNAL_PIN, 1);
-        tone(OUTPUT_PIN, note(n->tone - 24));
+        tone(OUTPUT_PIN, note_frequency(n->tone));
     } else {
         // digitalWrite(INTERNAL_PIN, 0);
     }
     delay(get_delay(n->length, tempo));
+    noTone(OUTPUT_PIN);
 }
 
-void aaaa() {
-    double tempo = 60;
 
-    struct Note mid_c;
-    mid_c.tone = 24;
-    mid_c.length = 3;
+void play_song(struct Note **song, double tempo) {
+    for(int i =0;; i++) {
+        if (song[i]->tone != end_note) {
+            play_note(song[i], tempo);
+        } else {
+            break;
+        }
+    }
+}
 
-    struct Note rest;
-    rest.tone = no_note;
-    rest.length = 3;
+void test_c_notes(double tempo) {
 
-    struct Note high_c;
-    high_c.tone = 36;
-    high_c.length = 3;
+    struct Note lower_c =  Note { .tone = -24, .length = 3};
+    struct Note low_c = Note { .tone = -12, .length = 3};
+    struct Note mid_c = Note { .tone = 0, .length = 3};
+    struct Note high_c = Note { .tone = 12, .length = 3};
+    struct Note higher_c = Note { .tone = 24, .length = 3};
 
-    play_note(&mid_c, tempo);
-    play_note(&rest, tempo);
-    play_note(&high_c, tempo);
-    play_note(&rest, tempo);
+    struct Note *c_notes[5] = {
+        &lower_c, &low_c, &mid_c, &high_c, &higher_c
+    };
+
+    for (int i = 0; i < 5; i++) {
+        play_note(c_notes[i], tempo);
+        play_note((struct Note *) REST_FOURTH, tempo);
+    }
 } 
 
 
@@ -131,11 +123,11 @@ void setup() {
 }
 
 void loop() {
-    // play_song((unsigned int *) scale);
-    // delay(DELAY * 4);
-    // play_song((unsigned int *) mary);
-    aaaa();
-    // delay(DELAY * 4);
+    play_song((struct Note **) scale, 60);
+    play_note((struct Note *) REST_FOURTH, 60);
+    play_song((struct Note **) mary, 90);
+    play_note((struct Note *) REST_FOURTH, 60);
+    test_c_notes(60);
 }
 
 
