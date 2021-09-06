@@ -1,18 +1,10 @@
 #include "scuffed_arduino.h"
 #include <sys/types.h>
+#include "note.h"
 
 #define OUTPUT_PIN 7 // digital pin 7
 #define INTERNAL_PIN 13
 #define DELAY 200
-
-#define byte char
-
-#define no_note 31
-#define end_note -31
-struct Note {
-    signed byte tone:6; // half steps away from middle C, -31 to +31, see special cases
-    byte length:4; // 0 = 1/32, 1 = 1/16, 2 = 1/8, 3 = 1/4, 4 = 1/2, 5 = 1, 6 = 2, 7 = 4, 8 = 8
-};
 
 const struct Note NOTE_C = Note { .tone = 0, .length = 3};
 const struct Note NOTE_D = Note { .tone = 2, .length = 3};
