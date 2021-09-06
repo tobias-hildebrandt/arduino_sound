@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo "---upload start"
+for dev in /dev/ttyACM*; do
+    echo "attempting upload to $dev"
+    if arduino-cli upload -b arduino:avr:uno --input-dir "$PWD"/build -p "$dev"; then
+        echo "upload successful!"
+        break
+    else
+        echo "upload failed"
+    fi
+done
+echo "---upload done"
