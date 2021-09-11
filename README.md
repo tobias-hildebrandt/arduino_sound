@@ -35,12 +35,12 @@ This project is still in its early stages, so please expect bugs. I do not recom
 
 ## Getting Started
 
-Note this has only been tested on Debian Linux, though it should work on any Unix-like system (BSD, MacOS, Solaris, etc.). You might need to change the upload script if your Arduino is not at `/dev/ttyACM*`.
+Note this has only been tested on Linux (Debian 10), though it should work on any Unix-like system (BSD, MacOS, Solaris, etc.). You might need to change the upload script if your Arduino is not at `/dev/ttyACM*`.
 
 - Clone this repository (`git clone`)
 - (Optional) Set up [clangd](https://clangd.llvm.org/) for your editor/IDE of choice. This helps with code completion, errors, etc. I use [vscode-clangd](https://github.com/clangd/vscode-clangd) with [VSCodium](https://vscodium.com/) (an open source binary built from the source code of VSCode). The Arduino build process will still use GCC via `arduino-cli` (see next step), `clangd` is just for language support in the editor.
   - Note: to get clangd working, you will need to symlink `build/compile_commands.json` to `compile_commands.json` (in the project root directory) after your first build. I used `ln -s $PWD/build/compile_commands.json $PWD/compile_commands.json`. An alternative would be to create a `.clangd` file.
-- Install [arduino-cli](https://arduino.github.io/arduino-cli/0.19/installation/). This is necessary for the build scripts. Personally, I downloaded the the archive, extracted it to a folder, and added `arduino-cli` to my `PATH` environment variable. Alternatively, you could use the [Arduino IDE](https://www.arduino.cc/en/software), [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile) (I might use this in the future), or something else.
+- Install [arduino-cli](https://arduino.github.io/arduino-cli/0.19/installation/). This is necessary for the build scripts. Personally, I downloaded the the archive, extracted it to a directory, and added `arduino-cli` to my `PATH` environment variable. Alternatively, you could use the [Arduino IDE](https://www.arduino.cc/en/software), [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile) (I might use this in the future), or something else.
 - Install the necessary files for your board. For me and my Arduino Uno, I had to run:
 
    `arduino-cli config init`
@@ -56,7 +56,7 @@ Note this has only been tested on Debian Linux, though it should work on any Uni
 
 #### `make build_arduino`: 
 
-Build the hard-coded music program for an Arduino Uno. Evenutally there will be a better interface for building and including songs. **Currently, it builds an Arduino executable that loops through diagnostics (scales, Mary Had A Little Lamb, etc.).** 
+Build the music program for an Arduino Uno. Evenutally there will be a better interface for building and including songs. **Currently, it builds an Arduino executable that loops through diagnostics (scales, Mary Had A Little Lamb, etc.).** 
 
 The build process is a bit odd, since I need `src/ard_sound/clangd_arudino.h` to help with `clangd` language support, but I don't want it to actually be built with it. See `scripts/build_arduino.sh` for more details.
 
@@ -111,7 +111,7 @@ This design might be re-evalutated in the future depending on performance.
 
 ## License
 
-Unless otherwise noted, all file in this reporitory are released under the terms of the GNU General Public License version 3 or, at your choice, any later version. (GPLv3+). See [COPYING](COPYING) for more details.
+Unless otherwise noted, all files in this reporitory are released under the terms of the GNU General Public License version 3 or, at your choice, any later version. (GPLv3+). See [COPYING](COPYING) for more details.
 
 ---
 

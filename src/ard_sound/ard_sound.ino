@@ -145,12 +145,13 @@ void setup() {
 }
 
 void loop() {
+    // TODO: split this into another file
     play_song((struct Note **) scale, 60);
     play_note((struct Note *) REST_HALF, 60);
-    // play_song((struct Note **) mary, 120);
-    // play_note((struct Note *) REST_HALF, 60);
-    // test_c_notes(60);
-    // play_note((struct Note *) REST_HALF, 60);
+    play_song((struct Note **) mary, 120);
+    play_note((struct Note *) REST_HALF, 60);
+    test_c_notes(60);
+    play_note((struct Note *) REST_HALF, 60);
     test_raw_pitches(100, 2000);
     play_note((struct Note *) REST_HALF, 60);
 }
