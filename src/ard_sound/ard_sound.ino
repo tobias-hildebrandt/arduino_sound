@@ -123,7 +123,20 @@ void test_c_notes(double tempo) {
 
     play_song(c_notes, tempo);
 
-} 
+}
+
+/* min should not be below ~100*/
+void test_raw_pitches(double min, double max) {
+    double freq = min;
+    noTone(OUTPUT_PIN);
+    
+    while(freq < max) {
+        tone(OUTPUT_PIN, freq);
+        delay(10);
+        freq += pow(freq, 1./12.);
+        // noTone(OUTPUT_PIN);
+    }
+}
 
 
 void setup() {
@@ -133,10 +146,12 @@ void setup() {
 
 void loop() {
     play_song((struct Note **) scale, 60);
-    // play_note((struct Note *) REST_HALF, 60);
-    // play_song((struct Note **) mary, 120);
     play_note((struct Note *) REST_HALF, 60);
-    test_c_notes(60);
+    // play_song((struct Note **) mary, 120);
+    // play_note((struct Note *) REST_HALF, 60);
+    // test_c_notes(60);
+    // play_note((struct Note *) REST_HALF, 60);
+    test_raw_pitches(100, 2000);
     play_note((struct Note *) REST_HALF, 60);
 }
 
