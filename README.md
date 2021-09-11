@@ -79,7 +79,7 @@ Run the parser on your computer. Eventually, this should generate C code in the 
 ### Wiring Schematic
 The Arduino itself should wired up similarly to the following diagram:
 
-![Wiring Diagram](/misc/wiring_diagram.png)
+![Wiring Diagram](/misc/wiring/wiring_diagram.png)
 
 (diagram made with [Fritzing](https://fritzing.org/) and [GIMP](https://www.gimp.org/))
 
