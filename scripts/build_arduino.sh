@@ -36,3 +36,4 @@ for file in *.ino; do
   sed -i -E "s/\/*(.*$HEADER.*)/\1/g" "$file" # remove all /'s from beginning of line
 done
 echo "---untrim done"
+echo
