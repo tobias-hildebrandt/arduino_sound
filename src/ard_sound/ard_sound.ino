@@ -32,10 +32,10 @@ const struct Note* END = &NOTE_END;
 bool status_light = true;  // global variable in order to toggle internal led
 
 // fn = f0 * (a)n
-const double middle_C_frequency = 440;
+const double middle_A_frequency = 440;
 const double math_A = pow(2, 1./12.); // 12th root of 2
 double note_frequency(int half_steps_from_c) {
-    unsigned int frequency = middle_C_frequency * pow(math_A, half_steps_from_c);
+    unsigned int frequency = middle_A_frequency * pow(math_A, half_steps_from_c);
     return frequency;
 }
 
@@ -79,6 +79,8 @@ void toggle_internal_led() {
 
 void play_note(struct Note *n, double tempo) {
     noTone(OUTPUT_PIN);
+
+    // TODO: debug clickiness, may need to be done via circuitry
     
     // toggle_internal_led();
 
@@ -91,7 +93,7 @@ void play_note(struct Note *n, double tempo) {
 
 
 void play_song(struct Note **song, double tempo) {
-    for(int i =0;; i++) {
+    for(int i = 0; ; i++) {
         if (song[i]->tone != end_note) {
             play_note(song[i], tempo);
         } else {
@@ -100,28 +102,28 @@ void play_song(struct Note **song, double tempo) {
     }
 }
 
-void test_c_notes(double tempo) {
+void test_octaves(double tempo) {
 
-    struct Note lower_c =  Note { .tone = -24, .length = 3};
-    struct Note low_c = Note { .tone = -12, .length = 3};
-    struct Note mid_c = Note { .tone = 0, .length = 3};
-    struct Note high_c = Note { .tone = 12, .length = 3};
-    struct Note higher_c = Note { .tone = 24, .length = 3};
+    struct Note lower =  Note { .tone = -24, .length = 3};
+    struct Note low = Note { .tone = -12, .length = 3};
+    struct Note mid = Note { .tone = 0, .length = 3};
+    struct Note high = Note { .tone = 12, .length = 3};
+    struct Note higher = Note { .tone = 24, .length = 3};
 
-    struct Note *c_notes[] = {
-        &lower_c, 
-        &low_c, 
-        &mid_c, 
-        &high_c, 
-        &higher_c,
-        &high_c, 
-        &mid_c,
-        &low_c, 
-        &lower_c, 
+    struct Note *octave_notes[] = {
+        &lower, 
+        &low, 
+        &mid, 
+        &high, 
+        &higher,
+        &high, 
+        &mid,
+        &low, 
+        &lower, 
         (struct Note*) END
     };
 
-    play_song(c_notes, tempo);
+    play_song(octave_notes, tempo);
 
 }
 
@@ -138,6 +140,21 @@ void test_raw_pitches(double min, double max) {
     }
 }
 
+void test_all_note_pitches(double tempo) {
+
+    int tone = end_note + 1;
+    struct Note n = Note { .tone = 0, .length = 3};
+
+    while(tone < no_note) {
+        n.tone = tone;
+        play_note(&n, tempo);
+        tone++;
+    }
+}
+
+void simple_half_rest(double tempo) {
+    play_note((struct Note *) REST_HALF, tempo);
+}
 
 void setup() {
     pinMode(OUTPUT_PIN, OUTPUT);
@@ -147,13 +164,15 @@ void setup() {
 void loop() {
     // TODO: split this into another file
     play_song((struct Note **) scale, 60);
-    play_note((struct Note *) REST_HALF, 60);
+    simple_half_rest(60);
     play_song((struct Note **) mary, 120);
-    play_note((struct Note *) REST_HALF, 60);
-    test_c_notes(60);
-    play_note((struct Note *) REST_HALF, 60);
+    simple_half_rest(60);
+    test_octaves(60);
+    simple_half_rest(60);
     test_raw_pitches(100, 2000);
-    play_note((struct Note *) REST_HALF, 60);
+    simple_half_rest(60);
+    test_all_note_pitches(120);
+    simple_half_rest(60);
 }
 
 
