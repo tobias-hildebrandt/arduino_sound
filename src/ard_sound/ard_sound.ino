@@ -1,6 +1,5 @@
-#include "scuffed_arduino.h"
-#include <sys/types.h>
-#include "note.h"
+#include "clangd_arduino.h"
+#include "note.h" // note that arduino-cli is fussy about this path, see /scripts/build_arduino.sh
 
 #define OUTPUT_PIN 7 // digital pin 7
 #define INTERNAL_PIN 13
@@ -15,6 +14,7 @@ const struct Note NOTE_A = Note { .tone = 9, .length = 3};
 const struct Note NOTE_B = Note { .tone = 11, .length = 3};
 const struct Note NOTE_C_HIGH = Note { .tone = 12, .length = 3};
 const struct Note NOTE_REST_FOURTH = Note { .tone = no_note, .length = 3};
+const struct Note NOTE_REST_HALF = Note { .tone = no_note, .length = 4};
 const struct Note NOTE_END = Note { .tone = end_note, .length = 3};
 
 const struct Note* C = &NOTE_C;
@@ -26,12 +26,14 @@ const struct Note* A = &NOTE_A;
 const struct Note* B = &NOTE_B;
 const struct Note* C_HIGH = &NOTE_C_HIGH;
 const struct Note* REST_FOURTH = &NOTE_REST_FOURTH;
+const struct Note* REST_HALF = &NOTE_REST_HALF;
 const struct Note* END = &NOTE_END;
 
+bool status_light = true;  // global variable in order to toggle internal led
 
 // fn = f0 * (a)n
 const double middle_C_frequency = 440;
-const double math_A = pow(2, 1./12.);
+const double math_A = pow(2, 1./12.); // 12th root of 2
 double note_frequency(int half_steps_from_c) {
     unsigned int frequency = middle_C_frequency * pow(math_A, half_steps_from_c);
     return frequency;
@@ -48,32 +50,40 @@ const struct Note* mary[] = {
     D, D, E, D, C, END
 };
 
-unsigned long get_delay(byte length, double tempo) {
-    double fraction = 1;
+unsigned long get_delay(char length, double tempo) {
+    double measures = 1;
     // lookup table faster?
     // fraction = 1./32. * pow(2, length);
     switch (length) {
-        case 0: fraction = 1./32.;
-        case 1: fraction = 1./16.;
-        case 2: fraction = 1./8.;
-        case 3: fraction = 1./4.;
-        case 4: fraction = 1./2.;
-        case 5: fraction = 1;
-        case 6: fraction = 2;
-        case 7: fraction = 4;
-        case 8: fraction = 8;
+        case 0: measures = 1./32.; break;
+        case 1: measures = 1./16.; break;
+        case 2: measures = 1./8.; break;
+        case 3: measures = 1./4.; break;
+        case 4: measures = 1./2.; break;
+        case 5: measures = 1; break;
+        case 6: measures = 2; break;
+        case 7: measures = 4; break;
+        case 8: measures = 8; break;
     }
 
-    return (unsigned long)((fraction * 4 * 1000 / tempo)); // assume time signature denominator of 4
+    // beats per minute, not second 
+    // assume time signature denominator of 4
+    // seconds to milliseconds
+    return (unsigned long)((measures * 60 * 4 * 1000 / tempo)); 
+}
+
+void toggle_internal_led() {
+    status_light = !status_light;
+    digitalWrite(INTERNAL_PIN, status_light);
 }
 
 void play_note(struct Note *n, double tempo) {
     noTone(OUTPUT_PIN);
+    
+    // toggle_internal_led();
+
     if (n->tone != no_note) {
-        // digitalWrite(INTERNAL_PIN, 1);
         tone(OUTPUT_PIN, note_frequency(n->tone));
-    } else {
-        // digitalWrite(INTERNAL_PIN, 0);
     }
     delay(get_delay(n->length, tempo));
     noTone(OUTPUT_PIN);
@@ -98,14 +108,21 @@ void test_c_notes(double tempo) {
     struct Note high_c = Note { .tone = 12, .length = 3};
     struct Note higher_c = Note { .tone = 24, .length = 3};
 
-    struct Note *c_notes[5] = {
-        &lower_c, &low_c, &mid_c, &high_c, &higher_c
+    struct Note *c_notes[] = {
+        &lower_c, 
+        &low_c, 
+        &mid_c, 
+        &high_c, 
+        &higher_c,
+        &high_c, 
+        &mid_c,
+        &low_c, 
+        &lower_c, 
+        (struct Note*) END
     };
 
-    for (int i = 0; i < 5; i++) {
-        play_note(c_notes[i], tempo);
-        play_note((struct Note *) REST_FOURTH, tempo);
-    }
+    play_song(c_notes, tempo);
+
 } 
 
 
@@ -116,10 +133,11 @@ void setup() {
 
 void loop() {
     play_song((struct Note **) scale, 60);
-    play_note((struct Note *) REST_FOURTH, 60);
-    play_song((struct Note **) mary, 90);
-    play_note((struct Note *) REST_FOURTH, 60);
+    // play_note((struct Note *) REST_HALF, 60);
+    // play_song((struct Note **) mary, 120);
+    play_note((struct Note *) REST_HALF, 60);
     test_c_notes(60);
+    play_note((struct Note *) REST_HALF, 60);
 }
 
 

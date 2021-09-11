@@ -16,6 +16,11 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+
+// note that this is *only* for to help clangd understand the code
+// it should be stripped out before actual compilation
+// (though the compiler might do that own its own)
+
 #include <stdint.h>
 
 #define PROGMEM 
