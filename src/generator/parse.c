@@ -1,8 +1,10 @@
 #include "../include/note.h"
+#include <errno.h> // sudo ln -s /usr/include/asm-generic /usr/include/asm
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+
 
 #define BUFFER_SIZE 2048
 #define MAX_NOTES 256
@@ -27,7 +29,7 @@ bool char_is_note(char c, int *tone);
 
 int main(int argc, char** argv) {
 
-    printf("sizeof Note = %d\n", sizeof(struct Note));
+    // printf("sizeof Note = %d\n", sizeof(struct Note));
 
     if (argc < 2) {
         printf("please give a filename\n");
@@ -36,13 +38,18 @@ int main(int argc, char** argv) {
 
     char* filename = argv[1];
 
+    FILE *p_file = fopen(filename, "r");
+
+    if (p_file == NULL) {
+        fprintf(stderr, "failed to open file \'%s\', errno = %d\n", filename, errno);
+        exit(-1);
+    }
+
     struct State state = { 
         .notes = (struct Note*) malloc(sizeof(struct Note) * MAX_NOTES),
         .current_note = 0,
         .started = false
     };
-
-    FILE *p_file = fopen(filename, "r");
 
     char buf[BUFFER_SIZE];
     while (fgets(buf, BUFFER_SIZE, p_file) != NULL) {
@@ -50,11 +57,14 @@ int main(int argc, char** argv) {
         parse_line(&state, buf);
         printf("%s\n", buf);
     }
-    printf("done parsing\n");
+    printf("done parsing\n\n");
     printf("printing out notes: \n");
     for (int i=0;i<state.current_note;i++) {
         printf("note %d: t: %d, l: %d\n", i, state.notes[i].tone, state.notes[i].length);
     }
+
+    free(state.notes);
+    return 0;
 }
 
 void parse_line(struct State* p_state, char *line) {
@@ -82,12 +92,12 @@ void parse_line(struct State* p_state, char *line) {
             break;
         }
         if (char_is_note(c, &tone)) {
-            printf("found note char %c\n", c);
+            printf("note char %c, ", c);
             if (tone == invalid_note) {
-                printf("tone is invalid_note, exiting");
+                fprintf(stderr, "tone \"%c\" is invalid_note, exiting\n", c);
                 exit(-1);
             }
-            printf("adding note of tone: %d\n", tone);
+            printf("tone: %d\n", tone);
             
             // TODO: implement length
             p_state->notes[p_state->current_note].length = 5;
