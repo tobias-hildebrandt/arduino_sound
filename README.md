@@ -2,36 +2,25 @@
 
 This is a personal project exploring the concepts of digital sound/music, code generation, and microcontrollers. The main goal is to create software that will enable an Arduino Uno to play music initially contained in an [`.abc`](https://abcnotation.com/) file. I have chosen to write it in C in order to further my experience in the language.
 
----
-
 ## Current Progress
 
 This project is still in its early stages, so please expect bugs. I do not recommend using this in production.
 
 ### Core functionality 
-[x] sequences of sounds can be played via passive buzzer on the Arduino
 
-[] have the Arduino keep exact time instead of waiting for instructions between notes (probably only gain a couple of milliseconds at best)
-
-[] `.abc` files can be parsed using a host computer
-
-[] C header files (`.h`) are generated on the host computer
-
-[] user-friendly command line interface
-
-[] host computer program to play and test headers without the need of an Arduino
+- [x] sequences of sounds can be played via passive buzzer on the Arduino
+- [ ] have the Arduino keep exact time instead of waiting for instructions between notes (probably only gain a couple of milliseconds at best)
+- [ ] `.abc` files can be parsed using a host computer
+- [ ] C header files (`.h`) are generated on the host computer
+- [ ] user-friendly command line interface
+- [ ] host computer program to play and test headers without the need of an Arduino
 
 ### Future Possible Expansions
 
-[] parse MusicXML files
-
-[] allow for multiple buzzer to play harmonies
-
-[] re-write in Rust 🦀 (or another Arduino-compatible language)
-
-[] Windows support for build and upload scripts
-
----
+- [ ] parse MusicXML files
+- [ ] allow for multiple buzzer to play harmonies
+- [ ] re-write in Rust 🦀 (or another Arduino-compatible language)
+- [ ] Windows support for build and upload scripts
 
 ## Getting Started
 
@@ -49,8 +38,6 @@ Note this has only been tested on Linux (Debian 10), though it should work on an
 
    `arduino-cli core install arduino:avr`
 - See [the usage section of this readme](#usage) for build and execution details.
-
----
 
 ## Usage
 
@@ -71,8 +58,6 @@ Build the parser. This will create the executable `build/parse`.
 #### `build/parse <file.abc>`
 
 Run the parser on your computer. Eventually, this should generate C code in the form of header files. **(not yet fully implemented)**
-
----
 
 ## Architecture and Design
 
@@ -107,19 +92,13 @@ Whether or not this will have a significant effect on the compiled size of the p
 
 This design might be re-evalutated in the future depending on performance.
 
----
-
 ## License
 
 Unless otherwise noted, all files in this reporitory are released under the terms of the GNU General Public License version 3 or, at your choice, any later version. (GPLv3+). See [COPYING](COPYING) for more details.
 
----
-
 ## Contributors
 
 At this time, I ([Tobias H.](https://github.com/tobias-hildebrandt)) am the sole contributor and maintainer. If you feel like contributing, send a Pull Request or shoot me a message!
-
----
 
 ## Additional Reading
 
