@@ -5,17 +5,17 @@
 #define INTERNAL_PIN 13
 #define DELAY 200
 
-const struct Note NOTE_C = Note { .tone = 0, .length = 3};
-const struct Note NOTE_D = Note { .tone = 2, .length = 3};
-const struct Note NOTE_E = Note { .tone = 4, .length = 3};
-const struct Note NOTE_F = Note { .tone = 5, .length = 3};
-const struct Note NOTE_G = Note { .tone = 7, .length = 3};
-const struct Note NOTE_A = Note { .tone = 9, .length = 3};
-const struct Note NOTE_B = Note { .tone = 11, .length = 3};
-const struct Note NOTE_C_HIGH = Note { .tone = 12, .length = 3};
-const struct Note NOTE_REST_FOURTH = Note { .tone = no_note, .length = 3};
-const struct Note NOTE_REST_HALF = Note { .tone = no_note, .length = 4};
-const struct Note NOTE_END = Note { .tone = end_note, .length = 3};
+const struct Note NOTE_C = Note { .pitch = 0, .length = 3};
+const struct Note NOTE_D = Note { .pitch = 2, .length = 3};
+const struct Note NOTE_E = Note { .pitch = 4, .length = 3};
+const struct Note NOTE_F = Note { .pitch = 5, .length = 3};
+const struct Note NOTE_G = Note { .pitch = 7, .length = 3};
+const struct Note NOTE_A = Note { .pitch = 9, .length = 3};
+const struct Note NOTE_B = Note { .pitch = 11, .length = 3};
+const struct Note NOTE_C_HIGH = Note { .pitch = 12, .length = 3};
+const struct Note NOTE_REST_FOURTH = Note { .pitch = no_note, .length = 3};
+const struct Note NOTE_REST_HALF = Note { .pitch = no_note, .length = 4};
+const struct Note NOTE_END = Note { .pitch = end_note, .length = 3};
 
 const struct Note* C = &NOTE_C;
 const struct Note* D = &NOTE_D;
@@ -84,8 +84,8 @@ void play_note(struct Note *n, double tempo) {
     
     // toggle_internal_led();
 
-    if (n->tone != no_note) {
-        tone(OUTPUT_PIN, note_frequency(n->tone));
+    if (n->pitch != no_note) {
+        tone(OUTPUT_PIN, note_frequency(n->pitch));
     }
     delay(get_delay(n->length, tempo));
     noTone(OUTPUT_PIN);
@@ -94,7 +94,7 @@ void play_note(struct Note *n, double tempo) {
 
 void play_song(struct Note **song, double tempo) {
     for(int i = 0; ; i++) {
-        if (song[i]->tone != end_note) {
+        if (song[i]->pitch != end_note) {
             play_note(song[i], tempo);
         } else {
             break;
@@ -104,11 +104,11 @@ void play_song(struct Note **song, double tempo) {
 
 void test_octaves(double tempo) {
 
-    struct Note lower =  Note { .tone = -24, .length = 3};
-    struct Note low = Note { .tone = -12, .length = 3};
-    struct Note mid = Note { .tone = 0, .length = 3};
-    struct Note high = Note { .tone = 12, .length = 3};
-    struct Note higher = Note { .tone = 24, .length = 3};
+    struct Note lower =  Note { .pitch = -24, .length = 3};
+    struct Note low = Note { .pitch = -12, .length = 3};
+    struct Note mid = Note { .pitch = 0, .length = 3};
+    struct Note high = Note { .pitch = 12, .length = 3};
+    struct Note higher = Note { .pitch = 24, .length = 3};
 
     struct Note *octave_notes[] = {
         &lower, 
@@ -142,13 +142,13 @@ void test_raw_pitches(double min, double max) {
 
 void test_all_note_pitches(double tempo) {
 
-    int tone = end_note + 1;
-    struct Note n = Note { .tone = 0, .length = 3};
+    int pitch = end_note + 1;
+    struct Note n = Note { .pitch = 0, .length = 3};
 
-    while(tone < no_note) {
-        n.tone = tone;
+    while(pitch < no_note) {
+        n.pitch = pitch;
         play_note(&n, tempo);
-        tone++;
+        pitch++;
     }
 }
 
