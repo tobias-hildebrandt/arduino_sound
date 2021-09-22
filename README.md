@@ -1,10 +1,10 @@
 # An Arduino Sound Project
 
-This is a personal project exploring the concepts of basic digital sound/music, code generation, and microcontrollers. The main goal is to create software that will enable an Arduino Uno to play music initially contained in an [`.abc`](https://abcnotation.com/) file. I have chosen to write it in C in order to further my experience in the language.
+This is a personal project exploring the concepts of simple digital sound/music, code generation, and microcontrollers. The main goal is to create software that will enable an Arduino Uno to play music initially contained in an [`.abc`](https://abcnotation.com/) file. I have chosen to write it in C in order to further my experience in the language.
 
 ## Current Progress
 
-This project is still in its early stages, so please expect bugs. I do not recommend using this in production.
+This project is still in its early stages, so please expect bugs and incomplete features. Development is slow due to the fact that I have little free time from university work. I do not recommend using this in production.
 
 ### Core functionality 
 
@@ -13,7 +13,10 @@ This project is still in its early stages, so please expect bugs. I do not recom
 - [ ] `.abc` files can be parsed using a host computer
   - [x] pitch parsing
   - [ ] length parsing
+  - [ ] switch to regex?
+  - [ ] test coverage including sample `.abc` files
 - [ ] C header files (`.h`) are generated on the host computer
+  - [ ] perhaps generate intermediate data files which are later converted
 - [ ] user-friendly command line interface 
   - [ ] one command to parse a file, generate code, then build and upload the Arduino program
 - [ ] host computer program to play and test program without the need of an Arduino
@@ -35,11 +38,11 @@ Note this has only been tested on Linux (Debian 10), though it should work on an
 - Install [arduino-cli](https://arduino.github.io/arduino-cli/0.19/installation/). This is necessary for the build scripts. Personally, I downloaded the the archive, extracted it to a directory, and added `arduino-cli` to my `PATH` environment variable. Alternatively, you could use the [Arduino IDE](https://www.arduino.cc/en/software), [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile) (I might use this in the future), or something else.
 - Install the necessary files for your board. For me and my Arduino Uno, I had to run:
 
-   `arduino-cli config init`
+  `arduino-cli config init`
 
-   `arduino-cli core update-index`
+  `arduino-cli core update-index`
 
-   `arduino-cli core install arduino:avr`
+  `arduino-cli core install arduino:avr`
 - See [the usage section of this readme](#usage) for build and execution details.
 
 ## Usage
@@ -89,7 +92,7 @@ The main goal of this approach is to reduce executable size. Via [the Arduino we
 > 
 > `EEPROM 1k byte`
 
-By pre-generating our "songs" via a parser, we are able to figure out beforehand exactly which notes we need, then create them in a `const` fashion by generating code. Thus, the Arduino "song" will not store each note, only a reference (pointer or index) to each one.
+By pre-generating our "songs" via a parser, we are able to figure out beforehand exactly which notes we need, then create them in a `const` fashion by generating code. Thus, the Arduino "song" will not be a sequence of notes, but rather a sequence of references to pre-generated `const` notes.
 
 Whether or not this will have a significant effect on the compiled size of the program depends on the number of repeated notes of the specific song, as well as the pointer size of the platform (`16 bits` on the Uno).
 
