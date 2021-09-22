@@ -9,6 +9,8 @@ Each note in `.abc` follows a specific pattern (we are ignoring some parts for s
 [accidentals][pitch][octave][note length]
 ```
 
+Future improvement: use regex.
+
 ## Symbols
 
 ### Accidentals

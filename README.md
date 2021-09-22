@@ -1,6 +1,6 @@
 # An Arduino Sound Project
 
-This is a personal project exploring the concepts of digital sound/music, code generation, and microcontrollers. The main goal is to create software that will enable an Arduino Uno to play music initially contained in an [`.abc`](https://abcnotation.com/) file. I have chosen to write it in C in order to further my experience in the language.
+This is a personal project exploring the concepts of basic digital sound/music, code generation, and microcontrollers. The main goal is to create software that will enable an Arduino Uno to play music initially contained in an [`.abc`](https://abcnotation.com/) file. I have chosen to write it in C in order to further my experience in the language.
 
 ## Current Progress
 
@@ -11,14 +11,17 @@ This project is still in its early stages, so please expect bugs. I do not recom
 - [x] sequences of sounds can be played via passive buzzer on the Arduino
 - [ ] have the Arduino keep exact time instead of waiting for instructions between notes (probably only gain a couple of milliseconds at best)
 - [ ] `.abc` files can be parsed using a host computer
+  - [x] pitch parsing
+  - [ ] length parsing
 - [ ] C header files (`.h`) are generated on the host computer
-- [ ] user-friendly command line interface
-- [ ] host computer program to play and test headers without the need of an Arduino
+- [ ] user-friendly command line interface 
+  - [ ] one command to parse a file, generate code, then build and upload the Arduino program
+- [ ] host computer program to play and test program without the need of an Arduino
 
 ### Future Possible Expansions
 
 - [ ] parse MusicXML files
-- [ ] allow for multiple buzzer to play harmonies
+- [ ] allow for multiple buzzer to play harmonies/chords
 - [ ] re-write in Rust 🦀 (or another Arduino-compatible language)
 - [ ] Windows support for build and upload scripts
 
@@ -91,6 +94,8 @@ By pre-generating our "songs" via a parser, we are able to figure out beforehand
 Whether or not this will have a significant effect on the compiled size of the program depends on the number of repeated notes of the specific song, as well as the pointer size of the platform (`16 bits` on the Uno).
 
 This design might be re-evalutated in the future depending on performance.
+
+For notes on the parser, see [the parser's README](src/generator/README.md).
 
 ## License
 
