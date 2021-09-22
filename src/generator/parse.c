@@ -14,6 +14,7 @@
 const char pitch_chars[][2] = {
     {'A', -3}, {'B', -1}, {'C', 0}, {'D', 2}, {'E', 4}, {'F', 5}, {'G', 7},
     {'a', 9}, {'b', 11}, {'c', 12}, {'d', 14}, {'e', 16}, {'f', 17}, {'g', 19},
+    {'z', no_note}, {'Z', no_note}, {'x', no_note},
     {0, 0}
 };
 
@@ -122,7 +123,7 @@ void parse_line(struct State* state, char *line) {
 
         // check for the K line
         if (len > 2 && line[0] == 'K' && line[1] == ':') {
-            printf("found K line!:");
+            printf("found K line!: ");
             state->started = true;
         } else {
             printf("found useless line: ");
