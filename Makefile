@@ -1,24 +1,36 @@
-desktop: parse player_test
+PARSER=parse
+PLAYER=player
+
+BUILD=build
+
+CFLAGS=-Wall -Werror
+COMPCOMFLAG=-MJ build/compilecommands/
+CC=clang
+
+SDL=-lSDL2
+LIBS=-lm
+
+desktop: $(PLAYER) $(PARSER)
 	scripts/desktop_compile_commands.sh
 
-parse: compile_commands_dir build/player.o build/note.o
-	clang build/player.o build/note.o src/generator/parse.c -lSDL2 -lm -o build/parse -Wall -Werror -MJ build/compilecommands/parse.json
+$(PARSER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o
+	clang src/generator/parse.c $(CFLAGS) $(LIBS) $(SDL) $^ -o $(BUILD)/$@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
 
-player_test: compile_commands_dir build/player.o build/note.o
-	clang build/player.o build/note.o src/desktop_player/player_test.c -lSDL2 -lm -o build/player -Wall -Werror -MJ build/compilecommands/player.json
+$(PLAYER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o
+	clang src/desktop_player/player_test.c $(CFLAGS) $(LIBS) $(SDL) $^ -o $(BUILD)/$@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
 
-build/player.o: compile_commands_dir
-	clang src/desktop_player/player.c -fPIC -Wall -Werror -MJ build/compilecommands/player.o.json -c -o build/player.o
-
-build/note.o: compile_commands_dir
-	clang src/include/note.c -fPIC -Wall -Werror -MJ build/compilecommands/note.o.json -c -o build/note.o
-
-compile_commands_dir:
-	mkdir -p build/compilecommands/
+$(BUILD)/%.o: src/%.c
+	mkdir -p $(dir $@)
+	mkdir -p $(dir build/compilecommands/$(subst $(BUILD)/,,$@))
+	$(CC) $(CFLAGS) -c $< -o $@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
 
 build_arduino:
-	# will overwrite compile_command.sh
+	# will overwrite compile_commands.json
 	scripts/build_arduino.sh "src/ard_sound/" "build"
 
 upload_arduino:
 	scripts/upload_arduino.sh "build"
+
+.PHONY: clean
+clean:
+	rm -r $(BUILD)
