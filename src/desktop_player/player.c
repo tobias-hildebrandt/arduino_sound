@@ -49,8 +49,6 @@ void sdl_play_song(struct Note** song, SDL_AudioDeviceID device) {
 	for (int i = 0;; i++) {
 		struct Note * cur_note = song[i];
 
-		printf("node add is %p", cur_note);
-
 		if (cur_note->pitch == end_note) {
 			// end of song
 			break;

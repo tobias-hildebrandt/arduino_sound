@@ -36,14 +36,15 @@ Note this has only been tested on Linux (Debian 10), though it should work on an
 - Clone this repository (`git clone https://github.com/tobias-hildebrandt/arduino_sound`)
 - (Optional) Set up [clangd](https://clangd.llvm.org/) for your editor/IDE of choice. This helps with code completion, errors, etc. I use [vscode-clangd](https://github.com/clangd/vscode-clangd) with [VSCodium](https://vscodium.com/) (an open source binary built from the source code of VSCode). The Arduino build process will still use GCC via `arduino-cli` (see next step), `clangd` is just for language support in the editor.
   - Note: to get clangd working, you will need to symlink `build/compile_commands.json` to `compile_commands.json` (in the project root directory) after your first build. I used `ln -s $PWD/build/compile_commands.json $PWD/compile_commands.json`. An alternative would be to create a `.clangd` file.
-- Install [arduino-cli](https://arduino.github.io/arduino-cli/0.19/installation/). This is necessary for the build scripts. Personally, I downloaded the the archive, extracted it to a directory, and added `arduino-cli` to my `PATH` environment variable. Alternatively, you could use the [Arduino IDE](https://www.arduino.cc/en/software), [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile) (I might use this in the future), or something else.
-- Install the necessary files for your board. For me and my Arduino Uno, I had to run:
+- (for Arduino support) Install [arduino-cli](https://arduino.github.io/arduino-cli/0.19/installation/). This is necessary for the build scripts. Personally, I downloaded the the archive, extracted it to a directory, and added `arduino-cli` to my `PATH` environment variable. Alternatively, you could use the [Arduino IDE](https://www.arduino.cc/en/software), [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile) (I might use this in the future), or something else.
+  - Install the necessary files for your board. For me and my Arduino Uno, I had to run:
 
-  `arduino-cli config init`
+    `arduino-cli config init`
 
-  `arduino-cli core update-index`
+  `  arduino-cli core update-index`
 
-  `arduino-cli core install arduino:avr`
+    `arduino-cli core install arduino:avr`
+- (for desktop player) Install the SDL2 library. On Debian-based systems, this is done via `sudo apt-get install libsdl2-dev`
 - See [the usage section of this readme](#usage) for build and execution details.
 
 ## Usage
@@ -63,6 +64,8 @@ Attempt to upload the built program to **every device in /dev/ttyACM\***. This i
 #### `make desktop`
 
 Build the parser and desktop player. This will create the executable `build/parse` and `build/player`.
+
+Building the player requires SDL2.
 
 This will also create the desktop-specific `compile_commands.json`.
 
