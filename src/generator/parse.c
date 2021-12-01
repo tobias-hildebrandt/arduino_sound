@@ -116,13 +116,19 @@ int main(int argc, char** argv) {
 
     // terminate song
     state.song[state.current_note] = endnote;
+    state.current_note += 1;
 
     printf("printing out notes: \n");
     for (int i=0;i<state.current_note;i++) {
         printf("note %d: t: %d, l: %d\n", i, state.song[i].pitch, state.song[i].length);
     }
 
-    player_play_song2(state.song);
+    struct Song song = {
+        .notes = state.song,
+        .tempo = 360, // TODO parse this
+    };
+
+    player_play_song2(&song);
 
     free(state.song);
     return 0;

@@ -27,6 +27,9 @@ struct Note* mary[] = {
 };
 
 double length_id_to_fraction(unsigned char id) {
+    // how many measures is the note? not beats
+    // assume 4/4 for now
+    // TODO: take time signature for input and calculate it
     switch (id) {
         case 0: return 1./32.;
         case 1: return 1./16.;

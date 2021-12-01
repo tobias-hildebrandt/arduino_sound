@@ -10,7 +10,12 @@
 // TODO: move to implementation?
 struct Note {
     signed char pitch:8; // half steps away from middle C, -127 to +127, see special cases
-    unsigned char length:4; // length ID, see note.c for details
+    unsigned char length:4; // length ID, see note.c and parse.c for details
+};
+
+struct Song {
+    struct Note* notes; // array of notes
+    int tempo; // beats per minute
 };
 
 // TODO: extern?
