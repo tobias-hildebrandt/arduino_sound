@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "../desktop_player/player.h"
 
 #define BUFFER_SIZE 2048
 #define MAX_NOTES 256
-#define DEFAULT_LENGTH 3
 
 // TODO: perfect hashing
 // these would be better as hashmaps
@@ -73,7 +73,7 @@ void add_note_to_state(struct State* state, struct Note* note);
 bool try_parse_using_data_array(char c, const char** data, int* value, enum CharCategory* char_category, enum CharCategory real_category);
 void clear_builder(struct NoteBuilder* builder);
 void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note);
-int length_string_to_length(char* string);
+unsigned char length_string_to_id(char* string);
 
 int main(int argc, char** argv) {
 
@@ -323,7 +323,7 @@ bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note) {
     pitch += builder->accidentals; // accidentals are half-steps
     pitch += builder->octaves * 12; // octaves are 12 half steps
 
-    length = length_string_to_length(builder->length_string);
+    length = length_string_to_id(builder->length_string);
 
     note->length = length;
     note->pitch = pitch;
@@ -361,7 +361,49 @@ void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteB
     clear_builder(new_builder);
 }
 
-// TODO implement
-int length_string_to_length(char* string) {
-    return -1;
+unsigned char length_string_to_id(char* string) {
+    string[7] = 0; // make sure string is a string
+    int num_chars = strnlen(string, 8);
+    bool divided = false;
+    int length = -1;
+    if (num_chars == 0) {
+        return 5; // whole note
+    }
+    if (string[0] == '/') { // shorter than base
+        if (num_chars == 1) { // "/" is "/2"
+            return 4; // half note
+        }
+        divided = true;
+        length = atoi(string+1); // ignore first char which is '/'
+    } else { // longer than base
+        length = atoi(string);
+    }
+
+    // TODO: maybe make this a separate function or lookup table
+    // TODO: don't assume 4/4 time
+    if (divided) {
+        switch (length) {
+            case 32: return 0;
+            case 16: return 1;
+            case 8: return 2;
+            case 4: return 3;
+            case 2: return 4;
+            case 1: return 5;
+            default:
+                fprintf(stderr, "length of note has invalid number after /\n");
+                return -1;
+        }
+    } else {
+        switch (length) {
+            case 1: return 5;
+            case 2: return 6;
+            case 4: return 7;
+            case 8: return 8;
+            case 16: return 9;
+            default:
+                fprintf(stderr, "length of note has invalid number\n");
+                return -1;
+        }
+        
+    }
 }
