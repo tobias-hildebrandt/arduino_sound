@@ -3,3 +3,4 @@ compile_commands.json
 out/
 test-ino/
 README.html
+.cache

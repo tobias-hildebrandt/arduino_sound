@@ -1,54 +1,14 @@
 #include "clangd_arduino.h"
-#include "note.h" // note that arduino-cli is fussy about this path, see /scripts/build_arduino.sh
+
+// note that arduino-cli is fussy about the directory path, see /scripts/build_arduino.sh
+#include "note.h" 
+#include "note_math.h"
 
 #define OUTPUT_PIN 7 // digital pin 7
 #define INTERNAL_PIN 13
 #define DELAY 200
 
-const struct Note NOTE_C = Note { .pitch = 0, .length = 3};
-const struct Note NOTE_D = Note { .pitch = 2, .length = 3};
-const struct Note NOTE_E = Note { .pitch = 4, .length = 3};
-const struct Note NOTE_F = Note { .pitch = 5, .length = 3};
-const struct Note NOTE_G = Note { .pitch = 7, .length = 3};
-const struct Note NOTE_A = Note { .pitch = 9, .length = 3};
-const struct Note NOTE_B = Note { .pitch = 11, .length = 3};
-const struct Note NOTE_C_HIGH = Note { .pitch = 12, .length = 3};
-const struct Note NOTE_REST_FOURTH = Note { .pitch = no_note, .length = 3};
-const struct Note NOTE_REST_HALF = Note { .pitch = no_note, .length = 4};
-const struct Note NOTE_END = Note { .pitch = end_note, .length = 3};
-
-const struct Note* C = &NOTE_C;
-const struct Note* D = &NOTE_D;
-const struct Note* E = &NOTE_E;
-const struct Note* F = &NOTE_F;
-const struct Note* G = &NOTE_G;
-const struct Note* A = &NOTE_A;
-const struct Note* B = &NOTE_B;
-const struct Note* C_HIGH = &NOTE_C_HIGH;
-const struct Note* REST_FOURTH = &NOTE_REST_FOURTH;
-const struct Note* REST_HALF = &NOTE_REST_HALF;
-const struct Note* END = &NOTE_END;
-
 bool status_light = true;  // global variable in order to toggle internal led
-
-// fn = f0 * (a)n
-const double middle_A_frequency = 440;
-const double math_A = pow(2, 1./12.); // 12th root of 2
-double note_frequency(int half_steps_from_c) {
-    unsigned int frequency = middle_A_frequency * pow(math_A, half_steps_from_c);
-    return frequency;
-}
-
-const struct Note* scale[] = {
-    C, D, E, F, G, A, B, C_HIGH, END
-};
-
-const struct Note* mary[] = {
-    E, D, C, D, E, E, E, REST_FOURTH, 
-    D, D, D, REST_FOURTH, E, G, G, REST_FOURTH,
-    E, D, C, D, E, E, E, E, 
-    D, D, E, D, C, END
-};
 
 unsigned long get_delay(char length, double tempo) {
     double measures = 1;
@@ -82,7 +42,7 @@ void play_note(struct Note *n, double tempo) {
 
     // TODO: debug clickiness, may need to be done via circuitry
     
-    // toggle_internal_led();
+    toggle_internal_led();
 
     if (n->pitch != no_note) {
         tone(OUTPUT_PIN, note_frequency(n->pitch));
@@ -120,7 +80,7 @@ void test_octaves(double tempo) {
         &mid,
         &low, 
         &lower, 
-        (struct Note*) END
+        (struct Note*) &NOTE_END
     };
 
     play_song(octave_notes, tempo);
@@ -128,32 +88,30 @@ void test_octaves(double tempo) {
 }
 
 /* min should not be below ~100*/
-void test_raw_pitches(double min, double max) {
-    double freq = min;
+void test_raw_pitches(double start, double max) {
     noTone(OUTPUT_PIN);
     
-    while(freq < max) {
-        tone(OUTPUT_PIN, freq);
-        delay(10);
-        freq += pow(freq, 1./12.);
+    while(start < max) {
+        tone(OUTPUT_PIN, start);
+        delay(100);
+        toggle_internal_led();
+        start += 100;
         // noTone(OUTPUT_PIN);
     }
 }
 
 void test_all_note_pitches(double tempo) {
-
-    int pitch = end_note + 1;
     struct Note n = Note { .pitch = 0, .length = 3};
 
-    while(pitch < no_note) {
-        n.pitch = pitch;
+    // TODO: figure out why pitch -60 wont work, maybe it's too low for the buzzer?
+    for(char i = -30; i < 20; i++) { // ~77 Hz to ~1400 Hz
+        n.pitch = i;
         play_note(&n, tempo);
-        pitch++;
     }
 }
 
 void simple_half_rest(double tempo) {
-    play_note((struct Note *) REST_HALF, tempo);
+    play_note((struct Note *) &NOTE_REST_HALF, tempo);
 }
 
 void setup() {
@@ -163,12 +121,12 @@ void setup() {
 
 void loop() {
     // TODO: split this into another file
-    play_song((struct Note **) scale, 60);
-    simple_half_rest(60);
-    play_song((struct Note **) mary, 120);
-    simple_half_rest(60);
-    test_octaves(60);
-    simple_half_rest(60);
+    // play_song((struct Note **) scale, 60);
+    // simple_half_rest(60);
+    // play_song((struct Note **) mary, 120);
+    // simple_half_rest(60);
+    // test_octaves(60);
+    // simple_half_rest(60);
     test_raw_pitches(100, 2000);
     simple_half_rest(60);
     test_all_note_pitches(120);

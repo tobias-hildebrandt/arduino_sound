@@ -20,6 +20,7 @@ This project is still in its early stages, so please expect bugs and incomplete 
 - [ ] user-friendly command line interface 
   - [ ] one command to parse a file, generate code, then build and upload the Arduino program
 - [ ] host computer program to play and test program without the need of an Arduino
+  - [x] can play Note arrays
 
 ### Future Possible Expansions
 
@@ -53,13 +54,17 @@ Build the music program for an Arduino Uno. Evenutally there will be a better in
 
 The build process is a bit odd, since I need `src/ard_sound/clangd_arudino.h` to help with `clangd` language support, but I don't want it to actually be built with it. See `scripts/build_arduino.sh` for more details.
 
+This will also create the Arduino-specific `compile_commands.json` in `/build`.
+
 #### `make upload_arduino` 
 
 Attempt to upload the built program to **every device in /dev/ttyACM\***. This is done because power-cycling an Arduino will often change its device file between `ttyACM0` and `ttyACM1`.  
 
-#### `make parse`
+#### `make desktop`
 
-Build the parser. This will create the executable `build/parse`.
+Build the parser and desktop player. This will create the executable `build/parse` and `build/player`.
+
+This will also create the desktop-specific `compile_commands.json`.
 
 #### `build/parse <file.abc>`
 
@@ -113,4 +118,5 @@ At this time, I ([Tobias H.](https://github.com/tobias-hildebrandt)) am the sole
 - `.abc` notation: [ABC Notation Homepage](https://abcnotation.com/), [ABC examples](https://abcnotation.com/examples), [the ABC Standard](https://abcnotation.com/wiki/abc:standard:v2.1), [the ABC Plus Project](http://abcplus.sourceforge.net/)
 - Formula for note frequency: [One explanation](https://pages.mtu.edu/~suits/NoteFreqCalcs.html), [another explanation](https://en.wikipedia.org/wiki/Piano_key_frequencies)
 - A cool code generator: [iMatix GSL code generator](https://github.com/imatix/gsl)
+- Making tones in SDL [SDL2 tone generator](https://gist.github.com/jacobsebek/10867cb10cdfccf1d6cfdd24fa23ee96)
 

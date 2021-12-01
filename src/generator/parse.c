@@ -5,15 +5,17 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "../desktop_player/player.h"
 
 #define BUFFER_SIZE 2048
 #define MAX_NOTES 256
 #define DEFAULT_LENGTH 3
 
+// TODO: perfect hashing
 // these would be better as hashmaps
 const char pitch_chars[][2] = {
-    {'A', -3}, {'B', -1}, {'C', 0}, {'D', 2}, {'E', 4}, {'F', 5}, {'G', 7},
-    {'a', 9}, {'b', 11}, {'c', 12}, {'d', 14}, {'e', 16}, {'f', 17}, {'g', 19},
+    {'C', 0}, {'D', 2}, {'E', 4}, {'F', 5}, {'G', 7}, {'A', 9}, {'B', 11},
+    {'c', 12}, {'d', 14}, {'e', 16}, {'f', 17}, {'g', 19}, {'a', 21}, {'b', 23},
     {'z', no_note}, {'Z', no_note}, {'x', no_note},
     {0, 0}
 };
@@ -71,6 +73,7 @@ void add_note_to_state(struct State* state, struct Note* note);
 bool try_parse_using_data_array(char c, const char** data, int* value, enum CharCategory* char_category, enum CharCategory real_category);
 void clear_builder(struct NoteBuilder* builder);
 void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note);
+int length_string_to_length(char* string);
 
 int main(int argc, char** argv) {
 
@@ -106,11 +109,20 @@ int main(int argc, char** argv) {
     }
     printf("done parsing\n\n");
 
+    struct Note endnote = {
+        .pitch = end_note,
+        .length = 0
+    };
+
+    // terminate song
+    state.song[state.current_note] = endnote;
 
     printf("printing out notes: \n");
     for (int i=0;i<state.current_note;i++) {
         printf("note %d: t: %d, l: %d\n", i, state.song[i].pitch, state.song[i].length);
     }
+
+    player_play_song2(state.song);
 
     free(state.song);
     return 0;
@@ -219,8 +231,7 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
                 target_builder->accidentals += value;
                 break;
             case CATEGORY_LENGTH:
-                // TODO: append string
-                printf("LENGTH TODO!!!\n");
+                strncat(target_builder->length_string, &current_char, 1);
                 break;
             case CATEGORY_OCTAVE:
                 target_builder->octaves += value;
@@ -305,14 +316,14 @@ bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note) {
         return false;
     }
 
-    int length;
+    int length = 0;
     int pitch;
 
     pitch = builder->base_pitch;
     pitch += builder->accidentals; // accidentals are half-steps
     pitch += builder->octaves * 12; // octaves are 12 half steps
 
-    length = 3; // TODO: parse length
+    length = length_string_to_length(builder->length_string);
 
     note->length = length;
     note->pitch = pitch;
@@ -348,4 +359,9 @@ void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteB
     printf("\nnew builder starts with \"%s\"\n", current_builder->complete_string);
     // clear the now garbage builder
     clear_builder(new_builder);
+}
+
+// TODO implement
+int length_string_to_length(char* string) {
+    return -1;
 }
