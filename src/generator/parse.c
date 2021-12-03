@@ -10,25 +10,7 @@
 
 #define BUFFER_SIZE 2048
 #define MAX_NOTES 256
-
-// TODO: perfect hashing
-// these would be better as hashmaps
-const char pitch_chars[][2] = {
-    {'C', 0}, {'D', 2}, {'E', 4}, {'F', 5}, {'G', 7}, {'A', 9}, {'B', 11},
-    {'c', 12}, {'d', 14}, {'e', 16}, {'f', 17}, {'g', 19}, {'a', 21}, {'b', 23},
-    {'z', no_note}, {'Z', no_note}, {'x', no_note},
-    {0, 0}
-};
-
-const char accidental_chars[][2] = {
-    {'^', 1}, {'=', 0}, {'_', -1},
-    {0, 0}
-};
-
-const char octave_chars[][2] = {
-    {'\'', 1}, {',', -1},
-    {0, 0}
-};
+#define ERROR_CHAR 100
 
 struct NoteBuilder {
     int accidentals; // how many half-steps off we should be
@@ -39,14 +21,14 @@ struct NoteBuilder {
     bool empty;
 };
 
-
 // TODO: use defines instead??
+// numbers are in intentional order
 enum CharCategory {
-    CATEGORY_NONE,
-    CATEGORY_ACCIDENTAL,
-    CATEGORY_PITCH,
-    CATEGORY_OCTAVE,
-    CATEGORY_LENGTH
+    CATEGORY_NONE = 0,
+    CATEGORY_ACCIDENTAL = 1,
+    CATEGORY_PITCH = 2,
+    CATEGORY_OCTAVE = 3,
+    CATEGORY_LENGTH = 4
 };
 
 enum BuilderStatus {
@@ -70,10 +52,13 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
 const char* char_category_to_string(enum CharCategory cat);
 bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note);
 void add_note_to_state(struct State* state, struct Note* note);
-bool try_parse_using_data_array(char c, const char** data, int* value, enum CharCategory* char_category, enum CharCategory real_category);
 void clear_builder(struct NoteBuilder* builder);
 void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note);
 unsigned char length_string_to_id(char* string);
+
+char octave_char(char c);
+char accidental_char(char c);
+char pitch_char(char c);
 
 int main(int argc, char** argv) {
 
@@ -128,7 +113,7 @@ int main(int argc, char** argv) {
         .length = 0
     };
 
-    // terminate song
+    // terminate song by adding endnote to the end of it
     state.song[state.current_note] = endnote;
     state.current_note += 1;
 
@@ -142,6 +127,7 @@ int main(int argc, char** argv) {
         .tempo = 60, // TODO parse this
     };
 
+    printf("\n");
     player_play_song2(&song);
 
     free(state.song);
@@ -222,8 +208,8 @@ void parse_line(struct State* state, char *line) {
 
 enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, char current_char, enum CharCategory *last_category) {
     int value = 0;
-    enum CharCategory current_category = CATEGORY_NONE;
-    bool success = parse_char(current_char, &value, &current_category);
+    enum CharCategory current_category = CATEGORY_NONE; // what category is this note?
+    bool success = parse_char(current_char, &value, &current_category); // make sure that the character is valid
     if (success) {
 
         printf("in %s: char \'%c\' has value: %d\n", char_category_to_string(current_category), current_char, value);
@@ -232,18 +218,25 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
 
         enum BuilderStatus success_status = BUILDER_SUCCESS;
         
+        // if this starts a new note
         if ( // anything besides pitch can have more than 1 character
             (current_category != CATEGORY_PITCH && current_category < *last_category) || 
             (current_category == CATEGORY_PITCH && current_category <= *last_category)
         ) { 
-            // we have started a new note
-            target_builder = new_builder;
+            // tell callee that the current builder is done with its note
             success_status = BUILDER_DONE;
+
+            // put the character on the new builder
+            target_builder = new_builder;
+            
+            // add the character to the new builder
             strncat(new_builder->complete_string, &current_char, 1);
-        } else {
+        } else { // else we have not started a new note
+            // add the character to the current builder
             strncat(current_builder->complete_string, &current_char, 1);
         }
 
+        // handle the character category
         switch (current_category) {
             case CATEGORY_NONE:
                 return BUILDER_ERROR;
@@ -273,11 +266,29 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
 }
 
 bool parse_char(char c, int* value, enum CharCategory* char_category) {
+    // TODO: cleanup?
+    
+    // accidental
+    char val = accidental_char(c);
+    if (ERROR_CHAR != val) {
+        *char_category = CATEGORY_ACCIDENTAL;
+        *value = val;
+        
+    }
 
-    if (try_parse_using_data_array(c, (const char**) accidental_chars, value, char_category, CATEGORY_ACCIDENTAL) 
-        || try_parse_using_data_array(c, (const char**) pitch_chars, value, char_category, CATEGORY_PITCH) 
-        || try_parse_using_data_array(c, (const char**) octave_chars, value, char_category, CATEGORY_OCTAVE)
-    ) {
+    // pitch
+    val = pitch_char(c);
+    if (ERROR_CHAR != val) {
+        *char_category = CATEGORY_PITCH;
+        *value = val;
+        return true;
+    }
+
+    // octave
+    val = octave_char(c);
+    if (ERROR_CHAR != val) {
+        *char_category = CATEGORY_OCTAVE;
+        *value = val;
         return true;
     }
         
@@ -291,43 +302,6 @@ bool parse_char(char c, int* value, enum CharCategory* char_category) {
     return false;
 
 } 
-
-bool try_parse_using_data_array(char c, const char** data, int* value, enum CharCategory* char_category, enum CharCategory real_category) {
-    // printf("testing membership in %s\n", char_category_to_string(real_category));
-    for (int i = 0; ; i++) {
-        // printf("i is %d\n", i);
-        const char* current_pair = (char*)data + 2*i; // pointer arithmetic, each sub-array is 2 elements long
-        const char const_char = current_pair[0];
-        const char const_value = current_pair[1];
-
-        if (const_char == 0) { // reached end of category's array
-            return false;
-        }
-        if (const_char == c ) { // we have a match
-            // printf("found in %s\n", char_category_to_string(real_category));
-            *char_category = (enum CharCategory) real_category;
-            *value = const_value;
-            return true;
-        }
-    }
-    return false;
-}
-
-const char* char_category_to_string(enum CharCategory cat) {
-    switch (cat) {
-        case CATEGORY_NONE:
-            return "NO CATEGORY";
-        case CATEGORY_ACCIDENTAL:
-            return "ACCIDENTAL";
-        case CATEGORY_LENGTH:
-            return "LENGTH";
-        case CATEGORY_OCTAVE:
-            return "OCTAVE";
-        case CATEGORY_PITCH:
-            return "PITCH";
-    }
-    return "ERROR";
-}
 
 bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note) {
 
@@ -364,6 +338,7 @@ void clear_builder(struct NoteBuilder* builder) {
     strcpy(builder->complete_string, "");
 }
 
+// build, add, and swap our NoteBuilders
 void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note) {
     // add the note from the builder to the state
     bool should_add = build_note_from_builder(current_builder, new_note);
@@ -426,4 +401,66 @@ unsigned char length_string_to_id(char* string) {
         }
         
     }
+}
+
+char octave_char(char c) {
+    switch (c) {
+        case '\'': return 1;
+        case ',': return -1;
+        default: 
+            fprintf(stderr, "invalid octave char: %c\n", c);
+            return ERROR_CHAR;
+    }
+}
+
+char accidental_char(char c) {
+    switch (c) {
+        case '^': return 1;
+        case '=': return 0;
+        case '_': return -1;
+        default:
+            fprintf(stderr, "invalid accidental char: %c\n", c);
+            return ERROR_CHAR;
+    }
+}
+
+char pitch_char(char c) {
+    switch (c) {
+        case 'C': return 0;
+        case 'D': return 2;
+        case 'E': return 4;
+        case 'F': return 5;
+        case 'G': return 7;
+        case 'A': return 9;
+        case 'B': return 11;
+        case 'c': return 12;
+        case 'd': return 14;
+        case 'e': return 16;
+        case 'f': return 17;
+        case 'g': return 19;
+        case 'a': return 21;
+        case 'b': return 23;
+        case 'z': 
+        case 'Z':
+        case 'x': return no_note;
+        default: 
+            fprintf(stderr, "invalid pitch char: %c\n", c);
+            return ERROR_CHAR;
+    }
+}
+
+const char* char_category_to_string(enum CharCategory cat) {
+    switch (cat) {
+        case CATEGORY_NONE:
+            return "NO CATEGORY";
+        case CATEGORY_ACCIDENTAL:
+            return "ACCIDENTAL";
+        case CATEGORY_LENGTH:
+            return "LENGTH";
+        case CATEGORY_OCTAVE:
+            return "OCTAVE";
+        case CATEGORY_PITCH:
+            return "PITCH";
+    }
+    return "ERROR";
 }
