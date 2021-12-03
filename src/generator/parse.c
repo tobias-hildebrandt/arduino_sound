@@ -103,7 +103,21 @@ int main(int argc, char** argv) {
     
     printf("starting to parse file\n");
     while (fgets(buf, BUFFER_SIZE, file) != NULL) {
-        // line includes final '\n'
+        // line includes final '\n' if it's there
+        // if it isn't, then we get some wacky behavior, so let's make sure of it
+        int len = strnlen(buf, BUFFER_SIZE);
+
+        // if last character isn't newline
+        if (buf[len-1] != '\n') {
+            // and length is smaller than max string size for buffer
+            if (len < BUFFER_SIZE) {
+                printf("extrapolating newline from file that doesn't end with it\n");
+                buf[len] = '\n'; // set it to newline
+            } else {
+                fprintf(stderr, "buffer too small, exiting");
+            }
+        }
+
         parse_line(&state, buf);
         printf("%s\n", buf); // buf always ends in newline, but we add a new one for more sanity
     }
@@ -125,7 +139,7 @@ int main(int argc, char** argv) {
 
     struct Song song = {
         .notes = state.song,
-        .tempo = 360, // TODO parse this
+        .tempo = 60, // TODO parse this
     };
 
     player_play_song2(&song);
