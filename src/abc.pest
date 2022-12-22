@@ -1,0 +1,87 @@
+// entire abc file
+Entire = {
+    SOI
+    ~
+    (Version ~ NEWLINE)?
+    ~
+    Information
+    ~
+    Body
+    ~
+    EOI
+}
+
+// version
+Version = { version_prefix ~ version_number}
+
+version_prefix = _{ "%abc-" }
+
+version_number = {(ASCII_DIGIT)+ ~ ((".") ~ (ASCII_DIGIT)+)?}
+
+// information
+Information = {
+    (information_field)*
+}
+
+information_field = {
+    information_key ~ silent_colon ~ information_val ~ silent_newline
+}
+
+any_except_newline = { !NEWLINE ~ ANY }
+
+information_key = { ASCII_ALPHA }
+
+information_val = {(any_except_newline)+}
+
+silent_newline = _{ NEWLINE }
+
+silent_colon = _{ ":" }
+
+// tune body
+Body = {
+    ((silent_bar | note) ~ silent_note_whitespace*)*
+    ~
+    (silent_newline)?
+}
+
+note = {
+    note_pitch
+    ~
+    note_length
+}
+
+silent_note_whitespace = _{ " " | NEWLINE }
+
+silent_bar = _{ "|" }
+
+// note pitch
+note_pitch = {
+    accidentals?
+    ~
+    (pitch_char | rest_char)
+    ~
+    (octave*)
+}
+
+pitch_char = { ('A'..'G') | ('a'..'g') }
+
+rest_char = { "z" | "Z" }
+
+octave = { "," | "'" }
+
+accidentals = { natural | flat{1,2} | sharp{1,2} }
+
+sharp = { "^" }
+
+flat = { "_" }
+
+natural = { "=" }
+
+// note length
+note_length = {
+    greater_length | lesser_length | ""
+}
+
+greater_length = { ASCII_DIGIT+ }
+
+lesser_length = { ("/" ~ (ASCII_DIGIT+)) | ("/"+)}
