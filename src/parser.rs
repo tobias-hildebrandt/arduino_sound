@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use pest::Parser;
 use pest_derive::Parser;
 
-use crate::abc::{Headers, Note, Version, ABC, Length};
+use crate::abc::{Headers, Length, Note, Version, ABC};
 
 #[derive(Parser)]
 #[grammar = "abc.pest"]
@@ -18,13 +18,13 @@ pub fn parse_abc(file_path: &str) -> Result<ABC, anyhow::Error> {
 
     let mut abc = ABC::default();
 
-    for thing in entire.into_inner() {
-        match thing.as_rule() {
+    for in_entire in entire.into_inner() {
+        match in_entire.as_rule() {
             Rule::EOI => {
                 println!("end of parse");
             }
             Rule::Version => {
-                abc.version = match thing.into_inner().next() {
+                abc.version = match in_entire.into_inner().next() {
                     Some(pair) => match parse_version(pair.as_str()) {
                         Ok(v) => {
                             println!("parsed version as: {:?}", v);
@@ -42,8 +42,8 @@ pub fn parse_abc(file_path: &str) -> Result<ABC, anyhow::Error> {
                 };
             }
             Rule::Information => {
-                println!("\ninformation:");
-                for info in thing.into_inner() {
+                println!("information:");
+                for info in in_entire.into_inner() {
                     let mut inner = info.into_inner();
                     match (inner.next(), inner.next()) {
                         (Some(key), Some(val)) => {
@@ -55,30 +55,50 @@ pub fn parse_abc(file_path: &str) -> Result<ABC, anyhow::Error> {
                                 abc.headers.insert(key, Vec::new());
                             }
                             abc.headers.get_mut(&key).unwrap().push(val.to_string());
-
                         }
                         _ => println!("invalid information field: {:?}", inner.as_str()),
                     }
                 }
+                println!("done with information\n");
             }
             Rule::Body => {
-                println!("\nbody:");
-                for note in thing.into_inner() {
-                    let mut inner = note.into_inner();
-
-                    match (inner.next(), inner.next()) {
-                        (Some(pitch), Some(length)) => {
-                            println!("start note");
-                            let pitch_inner = pitch.into_inner();
-                            for x in pitch_inner {
-                                println!("pitch inner: {:?}", x);
+                let body = in_entire.into_inner();
+                println!("body:");
+                for note in body {
+                    println!("start note");
+                    for note_component in note.into_inner() {
+                        match note_component.as_rule() {
+                            Rule::note_pitch => {
+                                println!("start note pitch");
+                                let pitch_components = note_component.into_inner();
+                                for pitch_component in pitch_components {
+                                    match pitch_component.as_rule() {
+                                        Rule::accidental => {
+                                            println!("accidental: {:?}", pitch_component.as_str());
+                                        }
+                                        Rule::pitch_char => {
+                                            println!("pitch: {:?}", pitch_component.as_str());
+                                        }
+                                        Rule::rest_char => {
+                                            println!("rest");
+                                        }
+                                        Rule::octave => {
+                                            println!("octave: {:?}", pitch_component.as_str());
+                                        }
+                                        _ => unreachable!(),
+                                    }
+                                }
+                                println!("end note pitch");
                             }
-                            println!("end note");
-                            // println!("pitch: {:?}, len: {:?}", pitch.as_str(), length.as_str());
+                            Rule::note_length => {
+                                println!("TODO note length: {:?}", note_component.into_inner().as_str());
+                            }
+                            _ => unreachable!(),
                         }
-                        _ => println!("invalid note field: {:?}", inner.as_str()),
                     }
+                    println!("end note\n");
                 }
+                println!("done with body\n");
             }
             _ => unreachable!("matched a case in entire"),
         }

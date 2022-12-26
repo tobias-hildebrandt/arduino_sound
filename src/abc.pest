@@ -56,7 +56,7 @@ silent_bar = _{ "|" }
 
 // note pitch
 note_pitch = {
-    accidentals?
+    (accidental*)
     ~
     (pitch_char | rest_char)
     ~
@@ -69,7 +69,7 @@ rest_char = { "z" | "Z" }
 
 octave = { "," | "'" }
 
-accidentals = { natural | flat{1,2} | sharp{1,2} }
+accidental = { natural | flat | sharp }
 
 sharp = { "^" }
 
