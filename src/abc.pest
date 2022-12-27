@@ -56,10 +56,10 @@ silent_bar = _{ "|" }
 
 // note pitch
 NotePitch = {
-    RestChar | non_rest_note_pitch
+    RestChar | NonRestNotePitch
 }
 
-non_rest_note_pitch = {
+NonRestNotePitch = {
     (Natural | (Accidental{1,2}))?
     ~
     (PitchChar)
@@ -69,7 +69,7 @@ non_rest_note_pitch = {
 
 PitchChar = { ('A'..'G') | ('a'..'g') }
 
-RestChar = { "z" | "Z" }
+RestChar = { "z" | "Z" | "x" | "X" }
 
 Octave = { "," | "'" }
 

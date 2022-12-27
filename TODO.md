@@ -1,0 +1,4 @@
+- convert errors to thiserror
+  - reduce unwrap()s
+- switch to lalrpop?
+- finalize parse tree and external API

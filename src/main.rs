@@ -2,6 +2,7 @@ use anyhow::anyhow;
 
 mod parser;
 mod abc;
+mod parse_tree;
 
 fn main() -> Result<(), anyhow::Error> {
     let mut args = std::env::args();
@@ -15,6 +16,8 @@ fn main() -> Result<(), anyhow::Error> {
     let file_path = args.next().unwrap();
 
     let abc = parser::parse_abc(&file_path)?;
+
+    println!("abc is: {:#?}", abc);
 
     Ok(())
 }

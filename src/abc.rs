@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use enum_iterator::Sequence;
 
@@ -30,7 +30,6 @@ pub struct Version {
 pub type Headers = HashMap<char, Vec<String>>;
 
 /// A single note
-/// TODO: maybe call it a "tone" instead?
 #[derive(Debug, Clone)]
 pub struct Note {
     pub pitch: PitchOrRest,
@@ -40,16 +39,12 @@ pub struct Note {
 /// Musical pitch or a rest
 #[derive(Debug, Clone)]
 pub enum PitchOrRest {
-    Pitch(Pitch),
+    Pitch {
+        class: PitchClass,
+        /// Octaves above or below the base octave
+        octave: i8,
+    },
     Rest,
-}
-
-/// Pitch of a note
-#[derive(Debug, Clone)]
-pub struct Pitch {
-    pub class: PitchClass,
-    /// Octaves above or below the base octave
-    pub octave: i8,
 }
 
 /// Twelve-tone pitch class
@@ -70,24 +65,20 @@ pub enum PitchClass {
     B,
 }
 
-impl FromStr for PitchClass {
-    type Err = ();
+impl TryFrom<char> for PitchClass {
+    type Error = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() > 1 {
-            return Err(());
-        }
-
-        return match s.to_ascii_lowercase().chars().next().unwrap() {
-            'a' => Ok(PitchClass::A),
-            'b' => Ok(PitchClass::B),
-            'c' => Ok(PitchClass::C),
-            'd' => Ok(PitchClass::D),
-            'e' => Ok(PitchClass::E),
-            'f' => Ok(PitchClass::F),
-            'g' => Ok(PitchClass::G),
-            _ => Err(()),
-        };
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        return Ok(match value.to_ascii_lowercase() {
+            'a' => PitchClass::A,
+            'b' => PitchClass::B,
+            'c' => PitchClass::C,
+            'd' => PitchClass::D,
+            'e' => PitchClass::E,
+            'f' => PitchClass::F,
+            'g' => PitchClass::G,
+            _ => return Err(()),
+        });
     }
 }
 
@@ -105,7 +96,7 @@ impl PitchClass {
 #[derive(Debug, Clone)]
 pub enum Length {
     /// Base length
-    One,
+    Unit,
     Multiple(u64),
     Division(u64),
 }
