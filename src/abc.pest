@@ -12,7 +12,7 @@ Entire = {
 }
 
 // version
-Version = { version_prefix ~ version_number}
+Version = @{ version_prefix ~ version_number}
 
 version_prefix = _{ "%abc-" }
 
@@ -39,15 +39,15 @@ silent_colon = _{ ":" }
 
 // tune body
 Body = {
-    ((silent_bar | note) ~ silent_note_whitespace*)*
+    ((silent_bar | Note) ~ silent_note_whitespace*)*
     ~
     (silent_newline)?
 }
 
-note = {
-    note_pitch
+Note = {
+    NotePitch
     ~
-    note_length
+    NoteLength
 }
 
 silent_note_whitespace = _{ " " | NEWLINE }
@@ -55,33 +55,42 @@ silent_note_whitespace = _{ " " | NEWLINE }
 silent_bar = _{ "|" }
 
 // note pitch
-note_pitch = {
-    (accidental*)
-    ~
-    (pitch_char | rest_char)
-    ~
-    (octave*)
+NotePitch = {
+    RestChar | non_rest_note_pitch
 }
 
-pitch_char = { ('A'..'G') | ('a'..'g') }
+non_rest_note_pitch = {
+    (Natural | (Accidental{1,2}))?
+    ~
+    (PitchChar)
+    ~
+    (Octave*)
+}
 
-rest_char = { "z" | "Z" }
+PitchChar = { ('A'..'G') | ('a'..'g') }
 
-octave = { "," | "'" }
+RestChar = { "z" | "Z" }
 
-accidental = { natural | flat | sharp }
+Octave = { "," | "'" }
 
-sharp = { "^" }
+Accidental = { Flat | Sharp }
 
-flat = { "_" }
+Sharp = { "^" }
 
-natural = { "=" }
+Flat = { "_" }
+
+Natural = { "=" }
 
 // note length
-note_length = {
+NoteLength = {
     greater_length | lesser_length | ""
 }
 
 greater_length = { ASCII_DIGIT+ }
 
 lesser_length = { ("/" ~ (ASCII_DIGIT+)) | ("/"+)}
+
+// comment
+COMMENT = _{
+    "%" ~ (any_except_newline*) ~ NEWLINE
+}

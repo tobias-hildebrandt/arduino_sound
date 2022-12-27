@@ -1,5 +1,7 @@
 use std::{collections::HashMap, str::FromStr};
 
+use enum_iterator::Sequence;
+
 /// Everything in an ABC file
 #[derive(Debug, Clone)]
 pub struct ABC {
@@ -52,7 +54,7 @@ pub struct Pitch {
 
 /// Twelve-tone pitch class
 /// TODO: is this relative to key?
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Sequence)]
 pub enum PitchClass {
     C,
     CSharpDFlat,
@@ -66,6 +68,37 @@ pub enum PitchClass {
     A,
     ASharpBFlat,
     B,
+}
+
+impl FromStr for PitchClass {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() > 1 {
+            return Err(());
+        }
+
+        return match s.to_ascii_lowercase().chars().next().unwrap() {
+            'a' => Ok(PitchClass::A),
+            'b' => Ok(PitchClass::B),
+            'c' => Ok(PitchClass::C),
+            'd' => Ok(PitchClass::D),
+            'e' => Ok(PitchClass::E),
+            'f' => Ok(PitchClass::F),
+            'g' => Ok(PitchClass::G),
+            _ => Err(()),
+        };
+    }
+}
+
+impl PitchClass {
+    pub fn half_step_up(&self) -> Self {
+        enum_iterator::next_cycle(self).unwrap()
+    }
+
+    pub fn half_step_down(&self) -> Self {
+        enum_iterator::previous_cycle(self).unwrap()
+    }
 }
 
 /// Length of note relative to base length

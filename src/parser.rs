@@ -1,9 +1,12 @@
+use std::str::FromStr;
+
 use anyhow::anyhow;
 
-use pest::Parser;
+use fraction::Fraction;
+use pest::{iterators::Pair, Parser};
 use pest_derive::Parser;
 
-use crate::abc::{Headers, Length, Note, Version, ABC};
+use crate::abc::{Headers, Length, Note, Pitch, PitchClass, PitchOrRest, Version, ABC};
 
 #[derive(Parser)]
 #[grammar = "abc.pest"]
@@ -64,39 +67,8 @@ pub fn parse_abc(file_path: &str) -> Result<ABC, anyhow::Error> {
             Rule::Body => {
                 let body = in_entire.into_inner();
                 println!("body:");
-                for note in body {
-                    println!("start note");
-                    for note_component in note.into_inner() {
-                        match note_component.as_rule() {
-                            Rule::note_pitch => {
-                                println!("start note pitch");
-                                let pitch_components = note_component.into_inner();
-                                for pitch_component in pitch_components {
-                                    match pitch_component.as_rule() {
-                                        Rule::accidental => {
-                                            println!("accidental: {:?}", pitch_component.as_str());
-                                        }
-                                        Rule::pitch_char => {
-                                            println!("pitch: {:?}", pitch_component.as_str());
-                                        }
-                                        Rule::rest_char => {
-                                            println!("rest");
-                                        }
-                                        Rule::octave => {
-                                            println!("octave: {:?}", pitch_component.as_str());
-                                        }
-                                        _ => unreachable!(),
-                                    }
-                                }
-                                println!("end note pitch");
-                            }
-                            Rule::note_length => {
-                                println!("TODO note length: {:?}", note_component.into_inner().as_str());
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                    println!("end note\n");
+                for rules in body {
+                    let note = parse_note(rules)?;
                 }
                 println!("done with body\n");
             }
@@ -137,9 +109,78 @@ fn parse_information<'a>(key: &'a str, val: &'a str) -> Result<(char, &'a str), 
     Ok((key, val))
 }
 
-// fn parse_note(pitch: &str, length: &str) -> Result(Note, anyhow::Error) {
-//     Ok(Note {
-//         pitch: pitch.parse()?,
-//         length: Length::One,
-//     })
-// }
+fn parse_note(rules: Pair<Rule>) -> Result<Note, anyhow::Error> {
+    let mut pitch = PitchOrRest::Rest;
+    let mut length = Fraction::new(1u8, 1u8);
+
+    println!("start note");
+    for note_component in rules.into_inner() {
+        match note_component.as_rule() {
+            Rule::NotePitch => {
+                println!("start note pitch");
+                let pitch_full = note_component.into_inner().next().unwrap();
+                match pitch_full.as_rule() {
+                    Rule::RestChar => {}
+                    Rule::non_rest_note_pitch => {
+                        let pitch_components = pitch_full.into_inner();
+                        for pitch_component in pitch_components {
+                            match pitch_component.as_rule() {
+                                Rule::RestChar => {
+                                    println!("rest");
+                                    pitch = PitchOrRest::Rest;
+                                }
+                                Rule::PitchChar => {
+                                    println!("pitch: {:?}", pitch_component.as_str());
+
+                                    let p: PitchClass =
+                                        PitchClass::from_str(pitch_component.as_str())
+                                            .map_err(|_| anyhow!("failed pitch parsing"))?;
+                                    pitch = PitchOrRest::Pitch(Pitch {
+                                        class: p,
+                                        octave: 0,
+                                    });
+                                }
+                                Rule::Accidental => {
+                                    println!("accidental: {:?}", pitch_component.as_str());
+                                    if let PitchOrRest::Pitch(ref mut p) = &mut pitch {
+                                        match pitch_component.as_str().chars().next().unwrap() {
+                                            '^' => p.class = p.class.half_step_up(),
+                                            '_' => p.class = p.class.half_step_down(),
+                                            _ => unreachable!(),
+                                        }
+                                    }
+                                }
+                                Rule::Natural => {
+                                    println!("natural");
+                                }
+                                Rule::Octave => {
+                                    println!("octave: {:?}", pitch_component.as_str());
+                                }
+                                _ => unreachable!("pitch fail: {:?}", pitch_component.as_str()),
+                            }
+                        }
+                    }
+                    _ => unreachable!("pitch fail: {:?}", pitch_full.as_str()),
+                }
+
+                println!("end note pitch");
+            }
+            Rule::NoteLength => {
+                println!(
+                    "TODO note length: {:?}",
+                    note_component.into_inner().as_str()
+                );
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    let note = Note {
+        pitch,
+        length: Length::One,
+    };
+
+    println!("end note: {:?}\n", note);
+
+    Ok(note)
+}
