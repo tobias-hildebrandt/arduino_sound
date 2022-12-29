@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
+cpal = "0.14.2"
 enum-iterator = "1.2.0"
 fraction = "0.12.2"
 pest = "2.0"
