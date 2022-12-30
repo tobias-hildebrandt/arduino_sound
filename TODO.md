@@ -2,3 +2,11 @@
   - reduce unwrap()s
 - switch to lalrpop?
 - finalize parse tree and external API
+
+- arduino PWM
+  - https://docs.arduino.cc/learn/microcontrollers/analog-output
+  - https://github.com/bhagman/Tone#ugly-details
+  - https://en.wikipedia.org/wiki/Piezoelectricity
+  - https://en.wikipedia.org/wiki/Pulse-width_modulation
+  - https://en.wikipedia.org/wiki/Digital-to-analog_converter
+  - https://en.wikipedia.org/wiki/Pulse-code_modulation
