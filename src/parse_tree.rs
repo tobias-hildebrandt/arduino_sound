@@ -87,8 +87,8 @@ impl TryInto<crate::abc::Length> for Length {
         Ok(match self {
             Length::Default => crate::abc::Length::Unit,
             Length::Specified { divided, number } => match divided {
-                true => crate::abc::Length::Multiple(number),
-                false => crate::abc::Length::Division(number),
+                true => crate::abc::Length::Division(number),
+                false => crate::abc::Length::Multiple(number),
             },
         })
     }

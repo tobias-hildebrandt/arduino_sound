@@ -6,6 +6,8 @@ Entire = {
     ~
     Information
     ~
+    silent_newline?
+    ~
     Body
     ~
     EOI

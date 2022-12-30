@@ -193,7 +193,11 @@ fn parse_note_length(note_length: &str) -> Result<parse_tree::Length, anyhow::Er
     }
 
     let slashes_count = note_length.chars().take_while(|c| *c == '/').count();
-    let numbers: String = note_length.chars().filter(|c| c.is_numeric()).collect();
+    let numbers: String = note_length
+        .trim()
+        .chars()
+        .filter(|c| c.is_numeric())
+        .collect();
 
     Ok(match slashes_count {
         0 => {
@@ -208,7 +212,10 @@ fn parse_note_length(note_length: &str) -> Result<parse_tree::Length, anyhow::Er
         }
         1 => parse_tree::Length::Specified {
             divided: true,
-            number: numbers.parse()?,
+            number: match numbers.len() {
+                0 => 1,
+                _ => numbers.parse()?,
+            },
         },
         _ => parse_tree::Length::Specified {
             divided: true,
