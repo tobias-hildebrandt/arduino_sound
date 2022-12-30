@@ -49,8 +49,11 @@ pub enum PitchOrRest {
 
 /// Twelve-tone pitch class
 /// TODO: is this relative to key?
-#[derive(Debug, Clone, Sequence)]
+#[derive(Debug, Copy, Clone, Sequence)]
 pub enum PitchClass {
+    A,
+    ASharpBFlat,
+    B,
     C,
     CSharpDFlat,
     D,
@@ -60,9 +63,6 @@ pub enum PitchClass {
     FSharpGFlat,
     G,
     GSharpAFlat,
-    A,
-    ASharpBFlat,
-    B,
 }
 
 impl TryFrom<char> for PitchClass {
@@ -89,6 +89,10 @@ impl PitchClass {
 
     pub fn half_step_down(&self) -> Self {
         enum_iterator::previous_cycle(self).unwrap()
+    }
+
+    pub fn half_steps_from_a(&self) -> usize {
+        *self as usize - PitchClass::A as usize
     }
 }
 

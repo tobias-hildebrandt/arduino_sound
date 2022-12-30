@@ -20,7 +20,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     println!("abc is: {:#?}", abc);
 
-    player::play()?;
+    player::play(abc)?;
 
     Ok(())
 }
