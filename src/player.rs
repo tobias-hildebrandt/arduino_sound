@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, Sample, SampleFormat, Stream, StreamConfig, StreamError};
 
@@ -23,7 +25,17 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
         SampleFormat::U16 => make_stream::<u16>(&device, &config, abc),
     }?;
 
-    // make sure playback has started (doesn't block, playback is in another thread)
+    /*
+    (from cpal docs)
+    Note: Creating and running a stream will not block the thread.
+    On modern platforms, the given callback is called by a dedicated,
+    high-priority thread responsible for delivering audio data to the
+    system’s audio device in a timely manner. On older platforms that
+    only provide a blocking API (e.g. ALSA), CPAL will create a thread
+    in order to consistently provide non-blocking behaviour
+    (currently this is a thread per stream, but this may change to use a
+    single thread for all streams).
+    */
     stream.play()?;
 
     // sleep for some time, since playback is in another thread
@@ -38,7 +50,7 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
 
 struct AudioGenerator {
     abc: ABC,
-    note_index: usize,
+    note_index: Option<usize>,
     samples_played_in_note: u32,
     samples_played_this_second: u32,
     samples_per_second: u32,
@@ -47,38 +59,47 @@ struct AudioGenerator {
 
 impl AudioGenerator {
     fn generate_and_tick(&mut self) -> Option<f32> {
-        const MIDDLE_A_FREQUENCY: f32 = 440.0;
-        const BPM: f32 = 60.;
-        let twelfth_root_of_two: f32 = f32::powf(2f32, 1f32 / 12f32);
+        const MIDDLE_A_FREQUENCY: f64 = 440.0;
+        const BPM: f64 = 60.;
+        let twelfth_root_of_two: f64 = f64::powf(2., 1. / 12.);
+
+        let mut new_note = false;
+
+        let mut current_note_seconds;
 
         // advance note_index until we get to a note that needs to be played
         let current_note = loop {
-            let current_note = self.abc.notes.get(self.note_index)?;
+            let index = match self.note_index {
+                Some(i) => i,
+                None => {
+                    new_note = true;
+                    self.note_index = Some(0);
+                    0
+                }
+            };
+            let current_note = self.abc.notes.get(index)?;
 
             let single_beat_secs = BPM / 60. / 4.;
 
             // the current note should be played for this many seconds
-            let current_note_seconds = match current_note.length {
+            current_note_seconds = match current_note.length {
                 crate::abc::Length::Unit => single_beat_secs,
-                crate::abc::Length::Multiple(m) => single_beat_secs * m as f32,
-                crate::abc::Length::Division(d) => single_beat_secs / d as f32,
+                crate::abc::Length::Multiple(m) => single_beat_secs * m as f64,
+                crate::abc::Length::Division(d) => single_beat_secs / d as f64,
             };
 
             // the current note should be played for this many samples
             let current_note_total_samples =
-                (current_note_seconds * self.samples_per_second as f32) as u32;
+                (current_note_seconds * self.samples_per_second as f64) as u32;
 
             if self.samples_played_in_note >= current_note_total_samples {
                 // go to the next note
                 self.samples_played_in_note = 0;
-                self.note_index += 1;
-                println!(
-                    "(changing notes) note #{} should be played for {} seconds = {} samples",
-                    self.note_index, current_note_seconds, current_note_total_samples
-                );
+                self.note_index = Some(index + 1);
+                new_note = true;
             } else {
                 // this is the note we want
-                break self.abc.notes.get(self.note_index)?;
+                break self.abc.notes.get(index)?;
             }
         };
 
@@ -89,33 +110,37 @@ impl AudioGenerator {
             crate::abc::PitchOrRest::Pitch { class, octave } => {
                 let half_steps_away = (*octave as i32 * 12) + class.half_steps_from_a() as i32;
 
-                // println!(
-                //     "note at index {:?}, half steps = {}",
-                //     self.note_index, half_steps_away
-                // );
-
                 // generate audio level from sine wave function
 
                 // desired frequency of the note
                 let frequency =
-                    MIDDLE_A_FREQUENCY * f32::powi(twelfth_root_of_two, half_steps_away);
-                // println!(
-                //     "note at index {:?}, frequency = {}",
-                //     self.note_index, frequency
-                // );
+                    MIDDLE_A_FREQUENCY * f64::powi(twelfth_root_of_two, half_steps_away);
+
+                if new_note {
+                    println!(
+                        "note at index {:0>2?} = {:?}, half steps = {}, freq = {}, seconds = {}",
+                        self.note_index.unwrap(),
+                        current_note,
+                        half_steps_away,
+                        frequency,
+                        current_note_seconds
+                    );
+                }
 
                 // x coord on the sine wave
-                let x = self.samples_played_this_second as f32 * frequency * std::f32::consts::TAU
-                    / self.samples_per_second as f32;
+                let x = self.samples_played_this_second as f64 * frequency * std::f64::consts::TAU
+                    / self.samples_per_second as f64;
 
                 // y coord on the sine wave
-                amplitude = f32::sin(x);
+                amplitude = f64::sin(x);
 
                 // reduce volume
                 amplitude *= 1. / 20.;
             }
             crate::abc::PitchOrRest::Rest => {
-                // println!("rest at index: {:?}", self.note_index);
+                if new_note {
+                    println!("rest at index: {:?}", self.note_index);
+                }
 
                 // silence has an amplitude of 0?
                 amplitude = 0.;
@@ -128,13 +153,13 @@ impl AudioGenerator {
 
         self.samples_played_in_note += 1;
 
-        return Some(amplitude);
+        return Some(amplitude as f32);
     }
 
     fn new(abc: ABC, samples_per_second: u32, channels: usize) -> Self {
         Self {
             abc,
-            note_index: 0,
+            note_index: None,
             samples_played_in_note: 0,
             samples_played_this_second: 0,
             samples_per_second,
@@ -142,7 +167,7 @@ impl AudioGenerator {
         }
     }
 
-    fn fill_output<T: Sample>(&mut self, output: &mut [T], _cb_info: &cpal::OutputCallbackInfo) {
+    fn fill_output<T: Sample>(&mut self, output: &mut [T]) {
         // println!("num frames: {}", output.len());
         for frame in output.chunks_mut(self.channels) {
             let next_value = match self.generate_and_tick() {
@@ -175,10 +200,10 @@ fn make_stream<T: Sample>(
         channels
     );
 
-    let mut val = AudioGenerator::new(abc, sample_rate, channels);
+    let mut audio_generator = AudioGenerator::new(abc, sample_rate, channels);
 
     let data_callback = move |output: &mut [T], cb_info: &cpal::OutputCallbackInfo| {
-        val.fill_output(output, cb_info);
+        audio_generator.fill_output(output);
     };
 
     let error_callback = |err: StreamError| {
@@ -188,4 +213,40 @@ fn make_stream<T: Sample>(
     let stream = device.build_output_stream(config, data_callback, error_callback)?;
 
     Ok(stream)
+}
+
+// write output of i16, single channel audio @ 44100 Hz to file
+pub fn write_output_to_file(abc: ABC, filename: &str) -> Result<(), anyhow::Error> {
+    const BUFFER_SIZE: usize = 65535;
+    let mut buffer = [0i16; BUFFER_SIZE];
+    let mut byte_buffer = [0u8; BUFFER_SIZE * 4];
+
+    let sample_rate = 44100;
+    let channels = 1usize;
+
+    let total_samples = sample_rate * 30;
+    let mut current_samples = 0;
+
+    let mut audio_generator = AudioGenerator::new(abc, sample_rate, channels);
+
+    use std::fs::File;
+    let mut file = File::create(filename)?;
+
+    while current_samples < total_samples {
+        audio_generator.fill_output(&mut buffer);
+
+        // extract bytes
+        for (index, num) in buffer.iter().enumerate() {
+            let bytes = num.to_le_bytes();
+            byte_buffer[index * 2] = bytes[0];
+            byte_buffer[index * 2 + 1] = bytes[1];
+        }
+
+        // write entire byte buffer
+        file.write(&byte_buffer)?;
+
+        current_samples += BUFFER_SIZE as u32;
+    }
+
+    Ok(())
 }

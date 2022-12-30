@@ -20,7 +20,8 @@ fn main() -> Result<(), anyhow::Error> {
 
     println!("abc is: {:#?}", abc);
 
-    player::play(abc)?;
+    player::write_output_to_file(abc.clone(), "test.pcm")?;
+    player::play(abc.clone())?;
 
     Ok(())
 }
