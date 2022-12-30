@@ -52,7 +52,7 @@ struct AudioGenerator {
     abc: ABC,
     note_index: Option<usize>,
     samples_played_in_note: u32,
-    samples_played_this_second: u32,
+    sample_count: u32,
     samples_per_second: u32,
     channels: usize,
 }
@@ -63,16 +63,18 @@ impl AudioGenerator {
         const BPM: f64 = 60.;
         let twelfth_root_of_two: f64 = f64::powf(2., 1. / 12.);
 
-        let mut new_note = false;
+        let mut is_new_note = false;
 
-        let mut current_note_seconds;
+        let mut note_seconds;
+
+        let mut fade_out_modifier;
 
         // advance note_index until we get to a note that needs to be played
-        let current_note = loop {
+        let note = loop {
             let index = match self.note_index {
                 Some(i) => i,
                 None => {
-                    new_note = true;
+                    is_new_note = true;
                     self.note_index = Some(0);
                     0
                 }
@@ -82,21 +84,32 @@ impl AudioGenerator {
             let single_beat_secs = BPM / 60. / 4.;
 
             // the current note should be played for this many seconds
-            current_note_seconds = match current_note.length {
+            note_seconds = match current_note.length {
                 crate::abc::Length::Unit => single_beat_secs,
                 crate::abc::Length::Multiple(m) => single_beat_secs * m as f64,
                 crate::abc::Length::Division(d) => single_beat_secs / d as f64,
             };
 
             // the current note should be played for this many samples
-            let current_note_total_samples =
-                (current_note_seconds * self.samples_per_second as f64) as u32;
+            let note_total_samples = (note_seconds * self.samples_per_second as f64) as u32;
 
-            if self.samples_played_in_note >= current_note_total_samples {
+            let remaining_fraction = (note_total_samples - self.samples_played_in_note) as f64
+                / note_total_samples as f64;
+
+            // fade out if 90% done with note
+            fade_out_modifier = if remaining_fraction > 0.1 {
+                None
+            } else {
+                // TODO: better fadeout function
+                let fade = 10. * remaining_fraction;
+                Some(fade)
+            };
+
+            if self.samples_played_in_note >= note_total_samples {
                 // go to the next note
                 self.samples_played_in_note = 0;
                 self.note_index = Some(index + 1);
-                new_note = true;
+                is_new_note = true;
             } else {
                 // this is the note we want
                 break self.abc.notes.get(index)?;
@@ -106,7 +119,7 @@ impl AudioGenerator {
         // output for this sample
         let mut amplitude;
 
-        match &current_note.pitch {
+        match &note.pitch {
             crate::abc::PitchOrRest::Pitch { class, octave } => {
                 let half_steps_away = (*octave as i32 * 12) + class.half_steps_from_a() as i32;
 
@@ -116,29 +129,34 @@ impl AudioGenerator {
                 let frequency =
                     MIDDLE_A_FREQUENCY * f64::powi(twelfth_root_of_two, half_steps_away);
 
-                if new_note {
+                if is_new_note {
                     println!(
                         "note at index {:0>2?} = {:?}, half steps = {}, freq = {}, seconds = {}",
                         self.note_index.unwrap(),
-                        current_note,
+                        note,
                         half_steps_away,
                         frequency,
-                        current_note_seconds
+                        note_seconds
                     );
                 }
 
                 // x coord on the sine wave
-                let x = self.samples_played_this_second as f64 * frequency * std::f64::consts::TAU
+                let x = self.sample_count as f64 * frequency * std::f64::consts::TAU
                     / self.samples_per_second as f64;
 
                 // y coord on the sine wave
                 amplitude = f64::sin(x);
 
+                // apply fadeout
+                if let Some(fade) = fade_out_modifier {
+                    amplitude *= fade;
+                }
+
                 // reduce volume
                 amplitude *= 1. / 20.;
             }
             crate::abc::PitchOrRest::Rest => {
-                if new_note {
+                if is_new_note {
                     println!("rest at index: {:?}", self.note_index);
                 }
 
@@ -147,9 +165,16 @@ impl AudioGenerator {
             }
         };
 
-        // increase tick (and roll over if needed)
-        self.samples_played_this_second =
-            (self.samples_played_this_second + 1) % self.samples_per_second;
+        // increase sample count
+        /*
+         * do not reset each second, in order to preserve float imprecisions
+         * and avoid "clicks" in the audio (due to a note "jumping" amplitudes
+         * if it crosses a second-barrier)
+         *
+         * this will loop over (and may cause a "click") after ~27 hours of 44100Hz audio,
+         * which seems acceptable (a u64 would make this ~116 billion hours)
+         */
+        self.sample_count += 1;
 
         self.samples_played_in_note += 1;
 
@@ -161,7 +186,7 @@ impl AudioGenerator {
             abc,
             note_index: None,
             samples_played_in_note: 0,
-            samples_played_this_second: 0,
+            sample_count: 0,
             samples_per_second,
             channels,
         }
