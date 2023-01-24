@@ -105,8 +105,7 @@ const NO_NOTE: i8 = 127;
 fn pitch_to_number(pitch: &PitchOrRest) -> i16 {
     let pitch = match pitch {
         crate::abc::PitchOrRest::Pitch { class, octave } => {
-            // -3 to do away from c
-            -3 + class.half_steps_from_a() as i8 + octave * 12
+            class.half_steps_from_a() as i8 + octave * 12
         }
         crate::abc::PitchOrRest::Rest => NO_NOTE,
     };
