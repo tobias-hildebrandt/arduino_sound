@@ -248,21 +248,20 @@ fn make_stream<T: Sample>(
 }
 
 // write output of i16, single channel audio @ 44100 Hz to file
-pub fn write_output_to_file(abc: ABC, filename: &str) -> Result<(), anyhow::Error> {
+pub fn write_as_raw(abc: ABC, filename: &str) -> Result<(), anyhow::Error> {
     const BUFFER_SIZE: usize = 65535;
     let mut buffer = [0i16; BUFFER_SIZE];
-    let mut byte_buffer = [0u8; BUFFER_SIZE * 4];
+    let mut byte_buffer = [0u8; BUFFER_SIZE * 2];
 
     let sample_rate = 44100;
     let channels = 1usize;
 
-    let total_samples = sample_rate * 30;
+    let total_samples = (sample_rate as f64 * abc.total_playtime_secs()) as u32;
     let mut current_samples = 0;
 
     let mut audio_generator = AudioGenerator::new(abc, sample_rate, channels);
 
-    use std::fs::File;
-    let mut file = File::create(filename)?;
+    let mut file = std::fs::File::create(filename)?;
 
     while current_samples < total_samples {
         audio_generator.fill_output(&mut buffer);
@@ -281,4 +280,23 @@ pub fn write_output_to_file(abc: ABC, filename: &str) -> Result<(), anyhow::Erro
     }
 
     Ok(())
+}
+
+// write as wav file using `wav` crate
+pub fn write_as_wav(abc: ABC, filename: &str) -> Result<(), anyhow::Error> {
+    let sample_rate = 44100;
+    let channels = 1usize;
+    let header = wav::Header::new(wav::WAV_FORMAT_PCM, channels as u16, sample_rate, 16);
+
+    let mut entire_song =
+        vec![0; (sample_rate as f64 * channels as f64 * abc.total_playtime_secs()) as usize];
+
+    let mut audio_generator = AudioGenerator::new(abc, sample_rate, channels);
+
+    audio_generator.fill_output(&mut entire_song);
+
+    let mut file = std::fs::File::create(filename)?;
+
+    wav::write(header, &wav::BitDepth::Sixteen(entire_song), &mut file)
+        .map_err(|e| anyhow::anyhow!(e))
 }
