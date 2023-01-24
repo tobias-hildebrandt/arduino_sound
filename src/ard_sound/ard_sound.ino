@@ -2,6 +2,7 @@
 
 #include <note.h>
 #include <note_math.h>
+#include "../../out/out.h"
 
 #define OUTPUT_PIN 7 // digital pin 7
 #define INTERNAL_PIN 13
@@ -28,7 +29,7 @@ unsigned long get_delay(char length, double tempo) {
     // beats per minute, not second
     // assume time signature denominator of 4
     // seconds to milliseconds
-    return (unsigned long)((measures * 60 * 4 * 1000 / tempo));
+    return (unsigned long)((measures * 60 * 1000 / tempo));
 }
 
 void toggle_internal_led() {
@@ -109,6 +110,19 @@ void test_all_note_pitches(double tempo) {
     }
 }
 
+void play_optimized_song(struct Note* lookup, short* song, double tempo) {
+    for(short i = 0; ; i++) {
+        short note_index = song[i];
+        struct Note* current_note = &lookup[note_index];
+
+        if (current_note->pitch == end_note) {
+            break;
+        }
+
+        play_note(current_note, tempo);
+    }
+}
+
 void simple_half_rest(double tempo) {
     play_note((struct Note *) &NOTE_REST_HALF, tempo);
 }
@@ -126,10 +140,11 @@ void loop() {
     // simple_half_rest(60);
     // test_octaves(60);
     // simple_half_rest(60);
-    test_raw_pitches(100, 2000);
-    simple_half_rest(60);
-    test_all_note_pitches(120);
-    simple_half_rest(60);
+    // test_raw_pitches(100, 2000);
+    // simple_half_rest(60);
+    // test_all_note_pitches(120);
+    // simple_half_rest(60);
+    play_optimized_song(note_lookup, song, 120.);
 }
 
 
