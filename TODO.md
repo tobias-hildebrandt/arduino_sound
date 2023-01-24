@@ -10,3 +10,5 @@
   - https://en.wikipedia.org/wiki/Pulse-width_modulation
   - https://en.wikipedia.org/wiki/Digital-to-analog_converter
   - https://en.wikipedia.org/wiki/Pulse-code_modulation
+
+- use tracing and set level based on -v argument

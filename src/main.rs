@@ -1,28 +1,26 @@
-use anyhow::anyhow;
+use clap::Parser;
 
 mod abc;
+mod args;
 mod parse_tree;
 mod parser;
 mod player;
 
 fn main() -> Result<(), anyhow::Error> {
-    let mut args = std::env::args();
+    let args = args::Args::parse();
 
-    if args.len() < 2 {
-        return Err(anyhow!("invalid # of arguments, needs path to abc file"));
-    }
-    // skip executable name
-    args.next();
-
-    let file_path = args.next().unwrap();
+    let file_path = args.input_file();
 
     let abc = parser::parse_abc(&file_path)?;
 
     println!("abc is: {:#?}", abc);
 
-    player::write_as_raw(abc.clone(), "test.pcm")?;
-    player::write_as_wav(abc.clone(), "test.wav")?;
-    player::play(abc.clone())?;
+    match args.file_format() {
+        Some(args::FileFormat::Raw) => player::write_as_raw(abc, args.output_file()?)?,
+        Some(args::FileFormat::Wav) => player::write_as_wav(abc, args.output_file()?)?,
+        Some(args::FileFormat::Play) => player::play(abc)?,
+        None => {}
+    }
 
     Ok(())
 }

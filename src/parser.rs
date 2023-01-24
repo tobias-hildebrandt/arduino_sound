@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::anyhow;
 
 use pest::{iterators::Pair, Parser};
@@ -9,7 +11,7 @@ use crate::{abc, parse_tree};
 #[grammar = "abc.pest"]
 pub struct ABCParser;
 
-pub fn parse_abc(file_path: &str) -> Result<abc::ABC, anyhow::Error> {
+pub fn parse_abc(file_path: &Path) -> Result<abc::ABC, anyhow::Error> {
     let raw_file = std::fs::read_to_string(file_path)?;
 
     let entire = ABCParser::parse(Rule::Entire, &raw_file)?
