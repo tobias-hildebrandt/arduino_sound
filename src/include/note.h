@@ -15,27 +15,31 @@ struct Note {
 
 struct Song {
     struct Note* notes; // array of notes
+    int num_notes;
     int tempo; // beats per minute
 };
 
-// TODO: extern?
-struct Note NOTE_C;
-struct Note NOTE_D;
-struct Note NOTE_E;
-struct Note NOTE_F;
-struct Note NOTE_G;
-struct Note NOTE_A;
-struct Note NOTE_B;
-struct Note NOTE_C_HIGH;
-struct Note NOTE_REST_FOURTH;
-struct Note NOTE_REST_HALF;
-struct Note NOTE_END;
+unsigned int note_to_int(struct Note* note);
+
+extern struct Note NOTE_C;
+extern struct Note NOTE_D;
+extern struct Note NOTE_E;
+extern struct Note NOTE_F;
+extern struct Note NOTE_G;
+extern struct Note NOTE_A;
+extern struct Note NOTE_B;
+extern struct Note NOTE_C_HIGH;
+extern struct Note NOTE_REST_FOURTH;
+extern struct Note NOTE_REST_HALF;
+extern struct Note NOTE_END;
 
 // TODO: forward declare without sizes??
-struct Note* scale[9];
+extern struct Note* scale[9];
 
-struct Note* mary[30];
+extern struct Note* mary[30];
 
 double length_id_to_fraction(unsigned char id);
+
+void print_note(struct Note* note);
 
 #endif

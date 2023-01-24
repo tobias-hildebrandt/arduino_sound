@@ -2,27 +2,34 @@ PARSER=parse
 PLAYER=player
 
 BUILD=build
+COMPILECOMMANDSDIR=compilecommands
 
-CFLAGS=-Wall -Werror
+INC=-I./src/include
+
+CFLAGS=-Wall -Werror -g -D_GNU_SOURCE $(COMPCOMFLAG)
 COMPCOMFLAG=-MJ build/compilecommands/
 CC=clang
 
 SDL=-lSDL2
 LIBS=-lm
 
-desktop: $(PLAYER) $(PARSER)
+# use dependencies to build necessary binaries, then run script on compile_commands.json
+desktop: $(PARSER)
 	scripts/desktop_compile_commands.sh
 
-$(PARSER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o
-	clang src/generator/parse.c $(CFLAGS) $(LIBS) $(SDL) $^ -o $(BUILD)/$@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
+# link parser binary
+$(PARSER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o $(BUILD)/generator/parse.o
+	$(CC) $(CFLAGS) $(LIBS) $(SDL) $(INC) $^ -o $(BUILD)/$@
 
-$(PLAYER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o
-	clang src/desktop_player/player_test.c $(CFLAGS) $(LIBS) $(SDL) $^ -o $(BUILD)/$@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
+# # link player binary
+# $(PLAYER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o $(BUILD)/desktop_player/player_test.o
+# 	$(CC) $(CFLAGS) $(LIBS) $(SDL) $(INC) $^ -o $(BUILD)/$@
 
+# build single source code file without linking
 $(BUILD)/%.o: src/%.c
 	mkdir -p $(dir $@)
 	mkdir -p $(dir build/compilecommands/$(subst $(BUILD)/,,$@))
-	$(CC) $(CFLAGS) -c $< -o $@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
+	$(CC) $(CFLAGS) $(INC) -c $< -o $@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
 
 build_arduino:
 	# will overwrite compile_commands.json

@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "../include/note.h"
-#include "../include/note_math.h"
+#include <note.h>
+#include <note_math.h>
 
-#define MAX_SECONDS 16 
+#define MAX_SECONDS 16
 #define FREQUENCY 48000 // samples per second
 #define BUFFER_LEN (MAX_SECONDS*FREQUENCY)
 #define QUIET_FRACTION 1/10
@@ -52,7 +52,7 @@ double square(double freq, unsigned long timestamp) {
 // 			// end of song
 // 			break;
 // 		}
-		
+
 // 		fill_buffer_with_note(cur_note, 0.02); // very low volume
 // 		SDL_QueueAudio(device, buffer, BUFFER_LEN);
 
@@ -99,13 +99,14 @@ double square(double freq, unsigned long timestamp) {
 // }
 
 void sdl_play_song2(struct Song* song, SDL_AudioDeviceID device) {
+
 	// contains exactly enough samples for 1 beat
 	// 60 because beats per minute must be translate to seconds
 	int buffer_size = sizeof(short) * FREQUENCY * 60 / (song->tempo);
 
 	// buffer on stack is fine because its lifetime is limited to this function
 	short* buffer[buffer_size];
-	
+
 	printf("buffer size: %d kB\n", buffer_size / 1024);
 
 	int beats_left_in_note = -1;
@@ -114,7 +115,7 @@ void sdl_play_song2(struct Song* song, SDL_AudioDeviceID device) {
 	while (cur_note->pitch != end_note) {
 		// printf("queueing note: p%d l%d\n", cur_note->pitch, cur_note->length);
 		// how many beats left we need to write
-		beats_left_in_note = length_id_to_fraction(cur_note->length); 
+		beats_left_in_note = length_id_to_fraction(cur_note->length);
 
 		// always write something, even if less than one whole beat,
 		// <1 beat is handled
@@ -125,20 +126,20 @@ void sdl_play_song2(struct Song* song, SDL_AudioDeviceID device) {
 		// while we haven't written all the beats of this note
 		while (beats_left_in_note > 0) {
 			// fill the buffer (very low volume)
-			int fill_length = fill_buffer_with_note(cur_note, song->tempo, 0.02, (short*) buffer, buffer_size); 
+			int fill_length = fill_buffer_with_note(cur_note, song->tempo, 0.02, (short*) buffer, buffer_size);
 
 			// tell SDL to copy our buffer to its internal queue
 			SDL_QueueAudio(device, buffer, fill_length);
 
 			// unpause device
-			SDL_PauseAudioDevice(device, 0); 
+			SDL_PauseAudioDevice(device, 0);
 
 			// we just wrote a note (or less if needed)
-			beats_left_in_note--; 
+			beats_left_in_note--;
 
-			// block until we need to refill it so we don't waste memory inside SDL internal buffer 
+			// block until we need to refill it so we don't waste memory inside SDL internal buffer
 			// we still have to leave us some time to queue up the next note
-			while (SDL_GetQueuedAudioSize(device) > (buffer_size / 2)); 
+			while (SDL_GetQueuedAudioSize(device) > (buffer_size / 2));
 		}
 
 		// we have written out the entire note, so go to the next
@@ -146,7 +147,7 @@ void sdl_play_song2(struct Song* song, SDL_AudioDeviceID device) {
 	}
 
 	// wait until no more audio left
-	while (SDL_GetQueuedAudioSize(device) > 0) ; 
+	while (SDL_GetQueuedAudioSize(device) > 0) ;
 }
 
 int player_play_song2(struct Song* song) {
@@ -198,7 +199,7 @@ int fill_buffer_with_note(struct Note* note, int tempo, double volume, short* bu
 	} else {
 		sound_count = to_fill;
 	}
-	 
+
 	// from 0 to sound_count
 	if (note->pitch != no_note) { // if not a rest note
 		// calculate frequency and fill buffer with wave

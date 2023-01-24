@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
+#include <limits.h>
 
 #include "../desktop_player/player.h"
 
@@ -37,24 +39,32 @@ enum BuilderStatus {
     BUILDER_DONE
 };
 
-//TODO: create necessary notes, 
+//TODO: create necessary notes,
 //      then use pointers to make actual series of notes
 //      to save ROM space
-struct State {
+struct SongBuildingState {
     struct Note* song;
     int current_note;
     bool started;
 };
 
-void parse_line(struct State* state, char *line);
+// end note for every song
+struct Note endnote = {
+    .pitch = end_note,
+    .length = 0
+};
+
+void parse_line(struct SongBuildingState* state, char *line);
 bool parse_char(char c, int* value, enum CharCategory* char_category);
 enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, char current_char, enum CharCategory *last_category);
 const char* char_category_to_string(enum CharCategory cat);
 bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note);
-void add_note_to_state(struct State* state, struct Note* note);
+void add_note_to_state(struct SongBuildingState* state, struct Note* note);
 void clear_builder(struct NoteBuilder* builder);
-void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note);
+void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct SongBuildingState* state, struct Note* new_note);
 unsigned char length_string_to_id(char* string);
+void usage();
+void generate_song_header_file(struct Song* song, char* file_name);
 
 char octave_char(char c);
 char accidental_char(char c);
@@ -64,8 +74,8 @@ int main(int argc, char** argv) {
 
     // printf("sizeof Note = %d\n", sizeof(struct Note));
 
-    if (argc < 2) {
-        printf("please give a filename\n");
+    if (argc < 3) {
+        usage();
         return 1;
     }
 
@@ -78,14 +88,14 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    struct State state = { 
+    struct SongBuildingState state = {
         .song = (struct Note*) malloc(sizeof(struct Note) * MAX_NOTES),
         .current_note = 0,
         .started = false
     };
 
     char buf[BUFFER_SIZE];
-    
+
     printf("starting to parse file\n");
     while (fgets(buf, BUFFER_SIZE, file) != NULL) {
         // line includes final '\n' if it's there
@@ -108,33 +118,30 @@ int main(int argc, char** argv) {
     }
     printf("done parsing\n\n");
 
-    struct Note endnote = {
-        .pitch = end_note,
-        .length = 0
-    };
-
     // terminate song by adding endnote to the end of it
-    state.song[state.current_note] = endnote;
-    state.current_note += 1;
+    add_note_to_state(&state, &endnote);
 
     printf("printing out notes: \n");
     for (int i=0;i<state.current_note;i++) {
-        printf("note %d: t: %d, l: %d\n", i, state.song[i].pitch, state.song[i].length);
+        printf("note %d: p: %d, l: %d\n", i, state.song[i].pitch, state.song[i].length);
     }
 
     struct Song song = {
         .notes = state.song,
+        .num_notes = state.current_note,
         .tempo = 60, // TODO parse this
     };
 
     printf("\n");
-    player_play_song2(&song);
+    // player_play_song2(&song);
+
+    generate_song_header_file(&song, argv[2]);
 
     free(state.song);
     return 0;
 }
 
-void parse_line(struct State* state, char *line) {
+void parse_line(struct SongBuildingState* state, char *line) {
     // if we haven't yet reached the notes
     if (! state->started) {
         int len = strlen(line);
@@ -180,7 +187,7 @@ void parse_line(struct State* state, char *line) {
             printf("\nend of line detected, building note\n");
 
             build_add_manage_builders(&current_builder, &new_builder, state, &new_note);
-            
+
             printf("\ndone parsing line: ");
             break;
         } else if (current_char == '%') {
@@ -213,22 +220,22 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
     if (success) {
 
         printf("in %s: char \'%c\' has value: %d\n", char_category_to_string(current_category), current_char, value);
-        
+
         struct NoteBuilder* target_builder = current_builder;
 
         enum BuilderStatus success_status = BUILDER_SUCCESS;
-        
+
         // if this starts a new note
         if ( // anything besides pitch can have more than 1 character
-            (current_category != CATEGORY_PITCH && current_category < *last_category) || 
+            (current_category != CATEGORY_PITCH && current_category < *last_category) ||
             (current_category == CATEGORY_PITCH && current_category <= *last_category)
-        ) { 
+        ) {
             // tell callee that the current builder is done with its note
             success_status = BUILDER_DONE;
 
             // put the character on the new builder
             target_builder = new_builder;
-            
+
             // add the character to the new builder
             strncat(new_builder->complete_string, &current_char, 1);
         } else { // else we have not started a new note
@@ -267,13 +274,13 @@ enum BuilderStatus add_char_to_builder(struct NoteBuilder* current_builder, stru
 
 bool parse_char(char c, int* value, enum CharCategory* char_category) {
     // TODO: cleanup?
-    
+
     // accidental
     char val = accidental_char(c);
     if (ERROR_CHAR != val) {
         *char_category = CATEGORY_ACCIDENTAL;
         *value = val;
-        
+
     }
 
     // pitch
@@ -291,7 +298,7 @@ bool parse_char(char c, int* value, enum CharCategory* char_category) {
         *value = val;
         return true;
     }
-        
+
     // check for length
     if ((c >= '0' && c <= '9') || c == '/') {
         *value = (int) c;
@@ -301,7 +308,7 @@ bool parse_char(char c, int* value, enum CharCategory* char_category) {
 
     return false;
 
-} 
+}
 
 bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note) {
 
@@ -325,7 +332,7 @@ bool build_note_from_builder(struct NoteBuilder* builder, struct Note* note) {
     return true;
 }
 
-void add_note_to_state(struct State* state, struct Note* note) {
+void add_note_to_state(struct SongBuildingState* state, struct Note* note) {
     state->song[state->current_note] = *note;
     state->current_note += 1;
 }
@@ -339,7 +346,7 @@ void clear_builder(struct NoteBuilder* builder) {
 }
 
 // build, add, and swap our NoteBuilders
-void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct State* state, struct Note* new_note) {
+void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteBuilder* new_builder, struct SongBuildingState* state, struct Note* new_note) {
     // add the note from the builder to the state
     bool should_add = build_note_from_builder(current_builder, new_note);
     if (should_add) {
@@ -348,7 +355,7 @@ void build_add_manage_builders(struct NoteBuilder* current_builder, struct NoteB
     } else {
         printf("not adding because empty builder\n");
     }
-    
+
     // copy new builder to the current one
     *current_builder = *new_builder;
     printf("\nnew builder starts with \"%s\"\n", current_builder->complete_string);
@@ -399,7 +406,7 @@ unsigned char length_string_to_id(char* string) {
                 fprintf(stderr, "length of note has invalid number\n");
                 return -1;
         }
-        
+
     }
 }
 
@@ -407,7 +414,7 @@ char octave_char(char c) {
     switch (c) {
         case '\'': return 1;
         case ',': return -1;
-        default: 
+        default:
             fprintf(stderr, "invalid octave char: %c\n", c);
             return ERROR_CHAR;
     }
@@ -440,10 +447,10 @@ char pitch_char(char c) {
         case 'g': return 19;
         case 'a': return 21;
         case 'b': return 23;
-        case 'z': 
+        case 'z':
         case 'Z':
         case 'x': return no_note;
-        default: 
+        default:
             fprintf(stderr, "invalid pitch char: %c\n", c);
             return ERROR_CHAR;
     }
@@ -463,4 +470,179 @@ const char* char_category_to_string(enum CharCategory cat) {
             return "PITCH";
     }
     return "ERROR";
+}
+
+// write the prelude
+void init_file(FILE * file) {
+    char* opening =
+        "#ifndef ARDSOUND_SONG\n"
+        "#define ARDSOUND_SONG\n\n"
+        "// This is a song file\n\n"
+        "#include <note.h>\n\n" // note.h must be system library!
+        ;
+
+    fputs(opening, file);
+}
+
+// write the ending content
+void end_file(FILE * file) {
+    char* ending = "#endif\n";
+    fputs(ending, file);
+}
+
+// write the note lookup array
+void write_regular(struct Note** regular, int array_size, FILE * file) {
+    char* start = "struct Note note_lookup[] = {\n";
+    fputs(start, file);
+
+    char* note_str      = "    { .pitch = %d, .length = %d},\n";
+    char* last_str = "    };\n\n";
+
+    // just loop through index 0 to end
+    for (int i = 0; i < array_size; i++) {
+        // is this the last note in the song?
+        struct Note* note = regular[i];
+
+        if (note == NULL) {
+            printf("regular had NULL note! at index %d\n", i);
+            // write closing
+            fprintf(file, "%s", last_str);
+            break;
+        }
+
+        printf("regular note at index %d: p: %d, l: %d\n", i, note->pitch, note->length);
+
+        // write the note
+        fprintf(file, note_str, note->pitch, note->length);
+    }
+}
+
+void write_song(int* inverse, struct Song* song, FILE * file) {
+    char* start = "short song[] = {\n";
+    fputs(start, file);
+
+    char* index_line = "    %d,\n";
+    char* index_line_last = "    %d\n};\n\n";
+
+    // just loop through index 0 to end
+   for (int i = 0; i < song->num_notes; i++) {
+        // is this the last note in the song?
+        struct Note* note = &song->notes[i];
+        printf("write_song i = %d\n ", i);
+        printf("note at index %d: p: %d, l: %d\n", i, note->pitch, note->length);
+
+
+        bool last = false;
+        if (note->pitch == end_note) {
+            last = true;
+        }
+
+        int note_number = note_to_int(note);
+        int note_index = inverse[note_number];
+
+        // write the note index number
+        if (last) {
+            fprintf(file, index_line_last, note_index);
+            break; // break early if needed
+        } else {
+            fprintf(file, index_line, note_index);
+        }
+    }
+
+}
+
+void create_regular_and_inverse_lookup(
+    struct Song* song,
+    struct Note** regular,
+    int * inverse,
+    int array_size
+) {
+    // next index for new notes
+    int total_notes = 0;
+
+    // initialize arrays
+    for (int i = 0; i < array_size; i++) {
+        inverse[i] = -1;
+        regular[i] = NULL;
+    }
+
+    // add end note
+    regular[0] = &endnote;
+    inverse[0] = 0;
+    total_notes += 1;
+
+    // loop from 0 to max note
+    for(int i = 0; i < song->num_notes; i++) {
+        printf("i = %d\n ", i);
+        struct Note* note = &song->notes[i];
+
+        if (note == NULL) {
+            printf("create_regular_and_inverse_lookup encountered NULL note! index: %d\n", i);
+            break;
+        }
+
+        unsigned int note_number;
+        int reg_index;
+        if (note->pitch == end_note) {
+            note_number = 0;
+            reg_index = 0;
+        } else {
+            note_number = note_to_int(note);
+            reg_index = inverse[note_number];
+        }
+
+        // if note is not yet in our store
+        if (reg_index == -1) {
+            printf("create lookups: note p: %3d, l: %d NEW   (reg) %d->%d\n", note->pitch, note->length, total_notes, note_number);
+            regular[total_notes] = note; // add it
+            inverse[note_number] = total_notes; // add to inverse lookup
+            total_notes += 1; // increment our counter
+        } else {
+            printf("create lookups: note p: %3d, l: %d FOUND (reg) %d->%d\n", note->pitch, note->length, reg_index, note_number);
+        }
+    }
+
+    printf("done\n");
+}
+
+void generate_song_header_file(struct Song* song, char* file_name) {
+    // real path of file
+    char true_path[PATH_MAX];
+    realpath(file_name, true_path);
+
+    // TODO: check if file exists and ask for overwrite
+    printf(
+        "generate_song_header_file file path is: '%s'\n",
+        true_path
+    );
+
+    FILE * f = fopen(true_path, "w");
+
+    init_file(f);
+
+    // generate maximum size array for perfect hashing
+    int array_size = (int) pow(2, sizeof(struct Note) * 8);
+    printf("generate array_size = %d\n", array_size);
+
+    struct Note* regular[array_size]; // note index -> note*
+    int inverse[array_size]; // note num -> note index
+
+    create_regular_and_inverse_lookup(song, regular, inverse, array_size);
+    printf("done initializing regular and inverse lookup tables\n");
+
+    write_regular(regular, array_size,f);
+
+    write_song(inverse, song, f);
+
+    end_file(f);
+
+    fclose(f);
+
+    printf("generate_song_header_file done\n");
+}
+
+void usage() {
+    char* s =
+        "Usage: parse <abc_file> <output_header_path>\n";
+    printf("%s", s);
 }

@@ -1,8 +1,7 @@
 #include "clangd_arduino.h"
 
-// note that arduino-cli is fussy about the directory path, see /scripts/build_arduino.sh
-#include "note.h" 
-#include "note_math.h"
+#include <note.h>
+#include <note_math.h>
 
 #define OUTPUT_PIN 7 // digital pin 7
 #define INTERNAL_PIN 13
@@ -26,10 +25,10 @@ unsigned long get_delay(char length, double tempo) {
         case 8: measures = 8; break;
     }
 
-    // beats per minute, not second 
+    // beats per minute, not second
     // assume time signature denominator of 4
     // seconds to milliseconds
-    return (unsigned long)((measures * 60 * 4 * 1000 / tempo)); 
+    return (unsigned long)((measures * 60 * 4 * 1000 / tempo));
 }
 
 void toggle_internal_led() {
@@ -41,7 +40,7 @@ void play_note(struct Note *n, double tempo) {
     noTone(OUTPUT_PIN);
 
     // TODO: debug clickiness, may need to be done via circuitry
-    
+
     toggle_internal_led();
 
     if (n->pitch != no_note) {
@@ -64,22 +63,22 @@ void play_song(struct Note **song, double tempo) {
 
 void test_octaves(double tempo) {
 
-    struct Note lower =  Note { .pitch = -24, .length = 3};
-    struct Note low = Note { .pitch = -12, .length = 3};
-    struct Note mid = Note { .pitch = 0, .length = 3};
-    struct Note high = Note { .pitch = 12, .length = 3};
-    struct Note higher = Note { .pitch = 24, .length = 3};
+    struct Note lower = { .pitch = -24, .length = 3};
+    struct Note low = { .pitch = -12, .length = 3};
+    struct Note mid = { .pitch = 0, .length = 3};
+    struct Note high = { .pitch = 12, .length = 3};
+    struct Note higher = { .pitch = 24, .length = 3};
 
     struct Note *octave_notes[] = {
-        &lower, 
-        &low, 
-        &mid, 
-        &high, 
-        &higher,
-        &high, 
+        &lower,
+        &low,
         &mid,
-        &low, 
-        &lower, 
+        &high,
+        &higher,
+        &high,
+        &mid,
+        &low,
+        &lower,
         (struct Note*) &NOTE_END
     };
 
@@ -90,7 +89,7 @@ void test_octaves(double tempo) {
 /* min should not be below ~100*/
 void test_raw_pitches(double start, double max) {
     noTone(OUTPUT_PIN);
-    
+
     while(start < max) {
         tone(OUTPUT_PIN, start);
         delay(100);
@@ -101,7 +100,7 @@ void test_raw_pitches(double start, double max) {
 }
 
 void test_all_note_pitches(double tempo) {
-    struct Note n = Note { .pitch = 0, .length = 3};
+    struct Note n = { .pitch = 0, .length = 3};
 
     // TODO: figure out why pitch -60 wont work, maybe it's too low for the buzzer?
     for(char i = -30; i < 20; i++) { // ~77 Hz to ~1400 Hz

@@ -45,4 +45,11 @@ double length_id_to_fraction(unsigned char id) {
     }
 }
 
+unsigned int note_to_int(struct Note* note) {
+    unsigned int i = 0;
+    i |= (unsigned int) (note->length << 8);
+    i |= (unsigned int) (note->pitch);
+    return i;
+}
+
 #endif
