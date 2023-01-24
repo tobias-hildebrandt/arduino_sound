@@ -46,14 +46,14 @@ pub struct Version {
 pub type Headers = HashMap<char, Vec<String>>;
 
 /// A single note
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Note {
     pub pitch: PitchOrRest,
     pub length: Length,
 }
 
 /// Musical pitch or a rest
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PitchOrRest {
     Pitch {
         class: PitchClass,
@@ -65,7 +65,7 @@ pub enum PitchOrRest {
 
 /// Twelve-tone pitch class
 /// TODO: is this relative to key?
-#[derive(Debug, Copy, Clone, Sequence)]
+#[derive(Debug, Copy, Clone, Sequence, PartialEq, Eq, Hash)]
 pub enum PitchClass {
     A,
     ASharpBFlat,
@@ -113,7 +113,7 @@ impl PitchClass {
 }
 
 /// Length of note relative to base length
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Length {
     /// Base length
     Unit,

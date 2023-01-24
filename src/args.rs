@@ -12,7 +12,7 @@ pub struct Args {
     format: Option<FileFormat>,
 
     #[arg(short = 'v', help = "Print verbose debug information")]
-    verbose: bool
+    verbose: bool,
 }
 
 #[derive(clap::ValueEnum, Clone, Copy)]
@@ -23,6 +23,8 @@ pub enum FileFormat {
     Wav,
     #[value(help = "Play to speakers")]
     Play,
+    #[value(help = "Generate C header for Arduino", )]
+    Header,
 }
 
 impl Args {
