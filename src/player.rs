@@ -17,7 +17,14 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
     let sample_format = output_config.sample_format();
     let config: StreamConfig = output_config.into();
 
-    println!("device: {:?}, config: {:?}", device.name(), config);
+    let playtime = abc.total_playtime_secs();
+
+    println!(
+        "playtime: {} sec, device: {:?}, config: {:?}",
+        playtime,
+        device.name(),
+        config
+    );
 
     let stream = match sample_format {
         SampleFormat::F32 => make_stream::<f32>(&device, &config, abc),
@@ -39,7 +46,7 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
     stream.play()?;
 
     // sleep for some time, since playback is in another thread
-    std::thread::sleep(std::time::Duration::from_secs(60));
+    std::thread::sleep(std::time::Duration::from_secs_f64(playtime));
 
     println!("done sleeping");
 
@@ -112,7 +119,7 @@ impl AudioGenerator {
                 is_new_note = true;
             } else {
                 // this is the note we want
-                break self.abc.notes.get(index)?;
+                break current_note;
             }
         };
 
@@ -131,7 +138,7 @@ impl AudioGenerator {
 
                 if is_new_note {
                     println!(
-                        "note at index {:0>2?} = {:?}, half steps = {}, freq = {}, seconds = {}",
+                        "note at index {:0>2?} = {:?}, half steps = {}, freq = {:2}, seconds = {}",
                         self.note_index.unwrap(),
                         note,
                         half_steps_away,
@@ -227,7 +234,7 @@ fn make_stream<T: Sample>(
 
     let mut audio_generator = AudioGenerator::new(abc, sample_rate, channels);
 
-    let data_callback = move |output: &mut [T], cb_info: &cpal::OutputCallbackInfo| {
+    let data_callback = move |output: &mut [T], _cb_info: &cpal::OutputCallbackInfo| {
         audio_generator.fill_output(output);
     };
 

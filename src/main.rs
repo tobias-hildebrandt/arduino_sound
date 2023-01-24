@@ -11,7 +11,7 @@ fn main() -> Result<(), anyhow::Error> {
     if args.len() < 2 {
         return Err(anyhow!("invalid # of arguments, needs path to abc file"));
     }
-    // executable name
+    // skip executable name
     args.next();
 
     let file_path = args.next().unwrap();
