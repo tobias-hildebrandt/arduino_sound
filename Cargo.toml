@@ -1,14 +1,17 @@
-[package]
-name = "ard-r-sound"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+    # lib and desktop executable
+    "ard-r-sound",
 
-[dependencies]
-anyhow = "1.0.66"
-clap = { version = "4.1.3", features = ["derive"] }
-cpal = "0.14.2"
-enum-iterator = "1.2.0"
-fraction = "0.12.2"
-pest = "2.0"
-pest_derive = "2.0"
-wav = "1.0.0"
+    # macro crate
+    "ard-r-sound-macros",
+
+    # barebones lib, for use in embedded
+    "ard-r-sound-base",
+
+    # embedded executable
+    # (do not actually include in workspace since it has a specific target via
+    # .cargo/config.toml and rust-toolchain.toml)
+    # see cargo issues 5520, 7004, and 11526
+    # "ard-r-sound-embedded"
+]

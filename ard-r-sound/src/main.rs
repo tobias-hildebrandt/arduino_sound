@@ -1,20 +1,23 @@
 use clap::Parser;
+use tracing::info;
 
-mod abc;
-mod args;
 mod codegen;
 mod parse_tree;
 mod parser;
 mod player;
+mod abc;
+mod args;
 
 fn main() -> Result<(), anyhow::Error> {
     let args = args::Args::parse();
 
+    tracing_subscriber::fmt::init();
+
     let file_path = args.input_file();
 
-    let abc = parser::parse_abc(&file_path)?;
+    let abc = parser::parse_abc_file(&file_path)?;
 
-    println!("abc is: {:#?}", abc);
+    info!("abc is: {:#?}", abc);
 
     match args.file_format() {
         Some(args::FileFormat::Raw) => player::write_as_raw(abc, args.output_file()?)?,

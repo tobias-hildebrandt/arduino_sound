@@ -1,14 +1,11 @@
+
+lib
 - convert errors to thiserror
   - reduce unwrap()s
 - switch to lalrpop?
 - finalize parse tree and external API
-
-- arduino PWM
-  - https://docs.arduino.cc/learn/microcontrollers/analog-output
-  - https://github.com/bhagman/Tone#ugly-details
-  - https://en.wikipedia.org/wiki/Piezoelectricity
-  - https://en.wikipedia.org/wiki/Pulse-width_modulation
-  - https://en.wikipedia.org/wiki/Digital-to-analog_converter
-  - https://en.wikipedia.org/wiki/Pulse-code_modulation
-
 - use tracing and set level based on -v argument
+- parse abc BPM, key, etc
+
+embedded
+- use internal clock to generate pin output

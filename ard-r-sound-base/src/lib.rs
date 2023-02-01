@@ -1,49 +1,9 @@
-use std::collections::HashMap;
+#![no_std]
 
-use enum_iterator::Sequence;
-
-/// Everything in an ABC file
-#[derive(Debug, Clone)]
-pub struct ABC {
-    pub version: Option<Version>,
-    pub headers: Headers,
-    pub notes: Vec<Note>,
+pub struct OptimizedStatic<const UNIQUES: usize, const LIST: usize> {
+    pub uniques: [Note; UNIQUES],
+    pub list: [usize; LIST],
 }
-
-impl Default for ABC {
-    fn default() -> Self {
-        Self {
-            version: None,
-            headers: Headers::new(),
-            notes: Vec::new(),
-        }
-    }
-}
-
-impl ABC {
-    pub fn total_playtime_secs(&self) -> f64 {
-        let mut total = 0f64;
-        // TODO: support non 4/4 time
-        const BASE: f64 = 1. / 4.;
-        for note in &self.notes {
-            total += match note.length {
-                Length::Unit => BASE,
-                Length::Multiple(x) => BASE * x as f64,
-                Length::Division(x) => BASE / x as f64,
-            }
-        }
-        total
-    }
-}
-
-/// The version of an ABC file
-#[derive(Debug, Clone)]
-pub struct Version {
-    pub major: u8,
-    pub minor: u8,
-}
-
-pub type Headers = HashMap<char, Vec<String>>;
 
 /// A single note
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -65,7 +25,7 @@ pub enum PitchOrRest {
 
 /// Twelve-tone pitch class
 /// TODO: is this relative to key?
-#[derive(Debug, Copy, Clone, Sequence, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, enum_iterator::Sequence, PartialEq, Eq, Hash)]
 pub enum PitchClass {
     A,
     ASharpBFlat,
@@ -117,6 +77,6 @@ impl PitchClass {
 pub enum Length {
     /// Base length
     Unit,
-    Multiple(u64),
-    Division(u64),
+    Multiple(u32),
+    Division(u32),
 }

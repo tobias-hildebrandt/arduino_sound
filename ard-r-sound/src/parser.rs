@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::anyhow;
-
+use tracing::info;
 use pest::{iterators::Pair, Parser};
 use pest_derive::Parser;
 
@@ -11,10 +11,14 @@ use crate::{abc, parse_tree};
 #[grammar = "abc.pest"]
 pub struct ABCParser;
 
-pub fn parse_abc(file_path: &Path) -> Result<abc::ABC, anyhow::Error> {
+pub fn parse_abc_file(file_path: &Path) -> Result<abc::ABC, anyhow::Error> {
     let raw_file = std::fs::read_to_string(file_path)?;
 
-    let entire = ABCParser::parse(Rule::Entire, &raw_file)?
+    parse_abc(&raw_file)
+}
+
+pub fn parse_abc(file_str: &str) -> Result<abc::ABC, anyhow::Error> {
+    let entire = ABCParser::parse(Rule::Entire, file_str)?
         .next()
         .ok_or(anyhow!("parse iterator is empty?"))?;
 
@@ -25,34 +29,34 @@ pub fn parse_abc(file_path: &Path) -> Result<abc::ABC, anyhow::Error> {
     for in_entire in entire.into_inner() {
         match in_entire.as_rule() {
             Rule::EOI => {
-                println!("end of parse");
+                info!("end of parse");
             }
             Rule::Version => {
                 version = match in_entire.into_inner().next() {
                     Some(pair) => match parse_version(pair.as_str()) {
                         Ok(v) => {
-                            println!("parsed version as: {:?}", v);
+                            info!("parsed version as: {:?}", v);
                             Some(v)
                         }
                         Err(e) => {
-                            println!("unable to parse version: {}", e);
+                            info!("unable to parse version: {}", e);
                             None
                         }
                     },
                     None => {
-                        println!("no version");
+                        info!("no version");
                         None
                     }
                 };
             }
             Rule::Information => {
-                println!("information:");
+                info!("information:");
                 for info in in_entire.into_inner() {
                     let mut inner = info.into_inner();
                     match (inner.next(), inner.next()) {
                         (Some(key), Some(val)) => {
                             let (key, val) = parse_information(key.as_str(), val.as_str())?;
-                            println!("parsed info line as: key: {:?}, val: {:?}", key, val);
+                            info!("parsed info line as: key: {:?}, val: {:?}", key, val);
 
                             //make sure we have an entry in our hashtable for the char
                             if !headers.contains_key(&key) {
@@ -60,23 +64,22 @@ pub fn parse_abc(file_path: &Path) -> Result<abc::ABC, anyhow::Error> {
                             }
                             headers.get_mut(&key).unwrap().push(val.to_string());
                         }
-                        _ => println!("invalid information field: {:?}", inner.as_str()),
+                        _ => info!("invalid information field: {:?}", inner.as_str()),
                     }
                 }
-                println!("done with information\n");
+                info!("done with information\n");
             }
             Rule::Body => {
                 let body = in_entire.into_inner();
-                println!("body:");
+                info!("body:");
                 for rules in body {
                     let parse: parse_tree::NoteParse = parse_note(rules)?;
-                    println!("parsed note is: {:?}", parse);
+                    info!("parsed note is: {:?}", parse);
                     let note: abc::Note = parse.try_into()?;
-                    println!("real note is: {:?}", note);
-                    println!();
+                    info!("real note is: {:?}", note);
                     notes.push(note);
                 }
-                println!("done with body\n");
+                info!("done with body\n");
             }
             _ => unreachable!("matched a case in entire"),
         }
@@ -120,7 +123,7 @@ fn parse_information<'a>(key: &'a str, val: &'a str) -> Result<(char, &'a str), 
 }
 
 fn parse_note(note: Pair<Rule>) -> Result<parse_tree::NoteParse, anyhow::Error> {
-    println!("start note parse");
+    info!("start note parse");
 
     let note_components: Vec<_> = note.into_inner().collect();
 
@@ -140,7 +143,7 @@ fn parse_note(note: Pair<Rule>) -> Result<parse_tree::NoteParse, anyhow::Error> 
 
     let note = parse_tree::NoteParse { pitch, length };
 
-    println!("end note parse");
+    info!("end note parse");
 
     Ok(note)
 }
@@ -221,7 +224,7 @@ fn parse_note_length(note_length: &str) -> Result<parse_tree::Length, anyhow::Er
         },
         _ => parse_tree::Length::Specified {
             divided: true,
-            number: 2u64.pow(slashes_count.try_into().unwrap()),
+            number: 2u32.pow(slashes_count.try_into().unwrap()),
         },
     })
 }

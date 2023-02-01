@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::Path;
 
+use tracing::{info, error};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, Sample, SampleFormat, Stream, StreamConfig, StreamError};
 
@@ -20,7 +21,7 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
 
     let playtime = abc.total_playtime_secs();
 
-    println!(
+    info!(
         "playtime: {} sec, device: {:?}, config: {:?}",
         playtime,
         device.name(),
@@ -49,7 +50,7 @@ pub fn play(abc: ABC) -> Result<(), anyhow::Error> {
     // sleep for some time, since playback is in another thread
     std::thread::sleep(std::time::Duration::from_secs_f64(playtime));
 
-    println!("done sleeping");
+    info!("done sleeping");
 
     Ok(())
 
@@ -138,7 +139,7 @@ impl AudioGenerator {
                     MIDDLE_A_FREQUENCY * f64::powi(twelfth_root_of_two, half_steps_away);
 
                 if is_new_note {
-                    println!(
+                    info!(
                         "note at index {:0>2?} = {:?}, half steps = {}, freq = {:2}, seconds = {}",
                         self.note_index.unwrap(),
                         note,
@@ -165,7 +166,7 @@ impl AudioGenerator {
             }
             crate::abc::PitchOrRest::Rest => {
                 if is_new_note {
-                    println!("rest at index: {:?}", self.note_index);
+                    info!("rest at index: {:?}", self.note_index);
                 }
 
                 // silence has an amplitude of 0?
@@ -201,7 +202,7 @@ impl AudioGenerator {
     }
 
     fn fill_output<T: Sample>(&mut self, output: &mut [T]) {
-        // println!("num frames: {}", output.len());
+        // info!("num frames: {}", output.len());
         for frame in output.chunks_mut(self.channels) {
             let next_value = match self.generate_and_tick() {
                 Some(v) => v,
@@ -226,7 +227,7 @@ fn make_stream<T: Sample>(
     let sample_rate = config.sample_rate.0;
     let channels = config.channels as usize;
 
-    println!(
+    info!(
         "run<{:?}>, rate: {}, channels: {}",
         T::FORMAT,
         sample_rate,
@@ -240,7 +241,7 @@ fn make_stream<T: Sample>(
     };
 
     let error_callback = |err: StreamError| {
-        eprintln!("an error occurred on the output audio stream: {}", err);
+        error!("an error occurred on the output audio stream: {}", err);
     };
 
     let stream = device.build_output_stream(config, data_callback, error_callback)?;

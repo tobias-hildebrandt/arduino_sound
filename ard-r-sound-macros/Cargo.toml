@@ -1,0 +1,16 @@
+[package]
+name = "ard-r-sound-macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ard_r_sound_macros"
+path = "src/proc_macros.rs"
+proc-macro = true
+
+[dependencies]
+ard-r-sound = { path = "../ard-r-sound" }
+ard-r-sound-base = { path = "../ard-r-sound-base" }
+proc-macro2 = "1.0.50"
+quote = "1.0.23"
+syn = { version = "1.0.107", features = ["full"] }

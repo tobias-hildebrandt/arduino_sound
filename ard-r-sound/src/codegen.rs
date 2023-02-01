@@ -1,6 +1,8 @@
 use std::io::Write;
 use std::{collections::HashMap, path::Path};
 
+use tracing::info;
+
 use crate::abc::{Length, Note, PitchOrRest, ABC};
 
 #[macro_export]
@@ -33,24 +35,26 @@ macro_rules! LOOKUP_LINE {
 }
 
 #[derive(Debug, Default)]
-struct Optimized<'a> {
-    uniques: Vec<&'a Note>,
-    lookup: HashMap<&'a Note, usize>,
-    list: Vec<usize>,
+pub struct Optimized<'a> {
+    pub uniques: Vec<&'a Note>,
+    pub list: Vec<usize>,
 }
 
-impl<'a> Optimized<'a> {
-    fn from_abc(abc: &'a ABC) -> Self {
+impl<'a> From<&'a ABC> for Optimized<'a> {
+    fn from(abc: &'a ABC) -> Self {
         let mut optimized = Self::default();
+
+        // lookup table for list index
+        let mut lookup: HashMap<&'a Note, usize> = HashMap::new();
 
         for note in abc.notes.iter() {
             if !optimized.uniques.contains(&note) {
                 optimized.uniques.push(note);
 
-                optimized.lookup.insert(note, optimized.uniques.len());
+                lookup.insert(note, optimized.uniques.len() - 1);
             }
 
-            optimized.list.push(*optimized.lookup.get(note).unwrap());
+            optimized.list.push(*lookup.get(note).unwrap());
         }
 
         optimized
@@ -60,9 +64,9 @@ impl<'a> Optimized<'a> {
 pub fn generate_c_header(abc: &ABC, file: &Path) -> Result<(), anyhow::Error> {
     let mut output_file = std::fs::File::create(file)?;
 
-    let optimized = Optimized::from_abc(abc);
+    let optimized = Optimized::from(abc);
 
-    println!("{:#?}", optimized);
+    info!("{:#?}", optimized);
 
     let mut lookup_str = String::new();
 

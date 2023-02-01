@@ -77,7 +77,7 @@ pub(crate) enum Octave {
 #[derive(Debug)]
 pub(crate) enum Length {
     Default,
-    Specified { divided: bool, number: u64 },
+    Specified { divided: bool, number: u32 },
 }
 
 impl TryInto<crate::abc::Length> for Length {
