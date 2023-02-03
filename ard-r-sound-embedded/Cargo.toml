@@ -1,0 +1,38 @@
+[package]
+name = "ard-r-sound-embedded"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+# do not believe any Cargo.toml in parent directories
+
+[[bin]]
+name = "ard-r-sound-embedded"
+test = false
+bench = false
+
+[dependencies]
+# panic-halt = "0.2.0"
+ufmt = "0.2.0"
+nb = "0.1.2"
+embedded-hal = "0.2.7"
+arduino-hal = { features = ["arduino-uno"], git = "https://github.com/rahix/avr-hal", rev = "4c9c44c314eb061ee20556ef10d45dea36e75ee4" }
+ard-r-sound-macros = { path = "../ard-r-sound-macros" }
+ard-r-sound-base = { path = "../ard-r-sound-base" }
+micromath = "2.0.0"
+
+[profile.dev]
+panic = "abort"
+lto = true
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+debug = true
+lto = true
+opt-level = "s"
+
+# dirty hack for debug mode
+[profile.dev.package.compiler_builtins]
+overflow-checks = false

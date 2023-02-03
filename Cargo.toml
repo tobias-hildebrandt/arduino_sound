@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    # lib and desktop executable
+    "ard-r-sound",
+
+    # macro crate
+    "ard-r-sound-macros",
+
+    # barebones lib, for use in embedded
+    "ard-r-sound-base",
+
+    # embedded executable
+    # (do not actually include in workspace since it has a specific target via
+    # .cargo/config.toml and rust-toolchain.toml)
+    # see cargo issues 5520, 7004, and 11526
+    # "ard-r-sound-embedded"
+]

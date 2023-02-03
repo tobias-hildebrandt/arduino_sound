@@ -1,0 +1,98 @@
+// entire abc file
+Entire = {
+    SOI
+    ~
+    (Version ~ NEWLINE)?
+    ~
+    Information
+    ~
+    silent_newline?
+    ~
+    Body
+    ~
+    EOI
+}
+
+// version
+Version = @{ version_prefix ~ version_number}
+
+version_prefix = _{ "%abc-" }
+
+version_number = {(ASCII_DIGIT)+ ~ ((".") ~ (ASCII_DIGIT)+)?}
+
+// information
+Information = {
+    (information_field)*
+}
+
+information_field = {
+    information_key ~ silent_colon ~ information_val ~ silent_newline
+}
+
+any_except_newline = { !NEWLINE ~ ANY }
+
+information_key = { ASCII_ALPHA }
+
+information_val = {(any_except_newline)+}
+
+silent_newline = _{ NEWLINE }
+
+silent_colon = _{ ":" }
+
+// tune body
+Body = {
+    ((silent_bar | Note) ~ silent_note_whitespace*)*
+    ~
+    (silent_newline)?
+}
+
+Note = {
+    NotePitch
+    ~
+    NoteLength
+}
+
+silent_note_whitespace = _{ " " | NEWLINE }
+
+silent_bar = _{ "|" }
+
+// note pitch
+NotePitch = {
+    RestChar | NonRestNotePitch
+}
+
+NonRestNotePitch = {
+    (Natural | (Accidental{1,2}))?
+    ~
+    (PitchChar)
+    ~
+    (Octave*)
+}
+
+PitchChar = { ('A'..'G') | ('a'..'g') }
+
+RestChar = { "z" | "Z" | "x" | "X" }
+
+Octave = { "," | "'" }
+
+Accidental = { Flat | Sharp }
+
+Sharp = { "^" }
+
+Flat = { "_" }
+
+Natural = { "=" }
+
+// note length
+NoteLength = {
+    greater_length | lesser_length | ""
+}
+
+greater_length = { ASCII_DIGIT+ }
+
+lesser_length = { ("/" ~ (ASCII_DIGIT+)) | ("/"+)}
+
+// comment
+COMMENT = _{
+    "%" ~ (any_except_newline*) ~ NEWLINE
+}

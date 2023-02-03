@@ -1,0 +1,10 @@
+[package]
+name = "ard-r-sound-base"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+enum-iterator = "1.2.0"

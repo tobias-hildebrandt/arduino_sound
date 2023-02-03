@@ -5,3 +5,6 @@ test-ino/
 README.html
 .cache
 .vscode
+/target
+*.pcm
+*.wav

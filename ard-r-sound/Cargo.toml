@@ -1,0 +1,25 @@
+[package]
+name = "ard-r-sound"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ard_r_sound_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "frontend"
+path = "src/main.rs"
+
+[dependencies]
+ard-r-sound-base = { path = "../ard-r-sound-base" }
+anyhow = "1.0.66"
+cpal = "0.14.2"
+enum-iterator = "1.2.0"
+fraction = "0.12.2"
+pest = "2.0"
+pest_derive = "2.0"
+wav = "1.0.0"
+clap = { version = "4.1.3", features = ["derive"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
