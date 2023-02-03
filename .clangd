@@ -1,0 +1,6 @@
+# force clangd into treating .ino files as c++ files
+If:
+  PathMatch: .*\.ino
+CompileFlags:
+  Remove: -x
+  Add: [-xc++]

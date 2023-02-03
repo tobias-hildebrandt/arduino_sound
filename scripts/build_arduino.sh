@@ -1,39 +1,34 @@
 #!/bin/sh
 
+# verify arguments
 if [ -z "$1" ] || [ -z "$2" ]; then
-  echo "first argument must be location of source directory"
-  echo "second argument must be location of build directory"
-  exit
+    echo "first argument must be location of source directory"
+    echo "second argument must be location of build directory"
+    exit
 fi
 
+BASE=$(pwd)
 SOURCE=$(realpath "$1")
 BUILD=$(realpath "$2")
 
-cd "$SOURCE" || (echo "error changing to source directory"; exit) # change to source directory
+# change to source directory
+cd "$SOURCE" || (echo "error changing to source directory"; exit)
 
-HEADER="clangd_arduino.h"
-
-echo "---trim start"
-for file in *.ino; do # attempt to trim each file in directory
-  echo "trimming $file"
-  # shellcheck disable=SC2016
-  sed -i -E "s/(.*$HEADER.*)/\/\/\1/g" "$file" # add "//" at beginning of line
-done
-echo "---trim done"
-
+# invoke arduino-cli
 echo "---build start"
 if arduino-cli compile -b arduino:avr:uno --build-path "$BUILD" --libraries="../" --warnings="all"; then
-  echo 'build success!'
+    echo '---build success!'
 else
-  echo 'build fail'
+    echo '---build fail'
+    exit 1
 fi
-echo "---build done"
 
-echo "---untrim start"
-for file in *.ino; do
-  echo "un-trimming $file"
-  # shellcheck disable=SC2016
-  sed -i -E "s/\/*(.*$HEADER.*)/\1/g" "$file" # remove all /'s from beginning of line
-done
-echo "---untrim done"
-echo
+# set up arduino compile_commands
+cd "$BASE" || (echo "error changing to base directory"; exit)
+
+# arduino-cli has a static output for its compilation database, so move it
+mv "${BUILD}/compile_commands.json" "${BUILD}/../compilecommands/arduino.json"
+
+# fix source path of ino, since arduino-cli makes a copy
+sed -i 's/build\/arduino\/sketch\/ard_sound.ino.cpp\"/c_src\/ard_sound\/ard_sound.ino\"/g' "${BUILD}/../compilecommands/arduino.json"
+

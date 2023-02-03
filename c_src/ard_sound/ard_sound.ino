@@ -1,4 +1,4 @@
-#include "clangd_arduino.h"
+#include <Arduino.h>
 
 #include <note.h>
 #include <note_math.h>
