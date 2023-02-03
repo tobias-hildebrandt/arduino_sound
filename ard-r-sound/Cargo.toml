@@ -8,7 +8,7 @@ name = "ard_r_sound_lib"
 path = "src/lib.rs"
 
 [[bin]]
-name = "frontend"
+name = "ard-r-sound"
 path = "src/main.rs"
 
 [dependencies]
