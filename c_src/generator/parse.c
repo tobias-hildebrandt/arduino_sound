@@ -1,5 +1,6 @@
 #include "../include/note.h"
 #include <errno.h> // sudo ln -s /usr/include/asm-generic /usr/include/asm
+#include <linux/limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -138,6 +139,7 @@ int main(int argc, char** argv) {
     generate_song_header_file(&song, argv[2]);
 
     free(state.song);
+
     return 0;
 }
 
@@ -606,17 +608,15 @@ void create_regular_and_inverse_lookup(
 }
 
 void generate_song_header_file(struct Song* song, char* file_name) {
-    // real path of file
-    char true_path[PATH_MAX];
-    realpath(file_name, true_path);
+    FILE * f = fopen(file_name, "w");
 
-    // TODO: check if file exists and ask for overwrite
-    printf(
-        "generate_song_header_file file path is: '%s'\n",
-        true_path
-    );
-
-    FILE * f = fopen(true_path, "w");
+    if (f == NULL) {
+        fprintf(stderr,
+            "unable to write to file '%s': %s\n",
+            file_name, strerror(errno)
+        );
+        return;
+    }
 
     init_file(f);
 

@@ -1,12 +1,13 @@
 PARSER=parse
 PLAYER=player
 
+SRC_DIR=c_src
 OUT_DIR=out
 OUT_FILE=out.h
 BUILD=build
 COMPILECOMMANDSDIR=compilecommands
 
-INC=-I./src/include
+INC=-I./$(SRC_DIR)/include
 
 CFLAGS=-Wall -Werror -g -D_GNU_SOURCE $(COMPCOMFLAG)
 COMPCOMFLAG=-MJ build/compilecommands/
@@ -27,22 +28,23 @@ $(PARSER): $(BUILD)/desktop_player/player.o $(BUILD)/include/note.o $(BUILD)/gen
 	$(CC) $(CFLAGS) $(LIBS) $(SDL) $(INC) $^ -o $(BUILD)/$@
 
 # build single source code file without linking
-$(BUILD)/%.o: src/%.c
+$(BUILD)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(dir $@)
 	mkdir -p $(dir build/compilecommands/$(subst $(BUILD)/,,$@))
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@ $(COMPCOMFLAG)$(subst $(BUILD)/,,$@).json
 
 # run the parser on an abc file
 %.abc: desktop
-	$(BUILD)/$(PARSER) $@ $(OUT_DIR)/$(OUT_FILE)
+	mkdir -p $(OUT_DIR)
+	$(BUILD)/$(PARSER) $@ "$(OUT_DIR)/$(OUT_FILE)"
 
+# will overwrite compile_commands.json
 build_arduino:
-	# will overwrite compile_commands.json
-	scripts/build_arduino.sh "src/ard_sound/" "build"
+	scripts/build_arduino.sh "$(SRC_DIR)/ard_sound/" $(BUILD)
 
 upload_arduino:
-	scripts/upload_arduino.sh "build"
+	scripts/upload_arduino.sh $(BUILD)
 
 .PHONY: clean
 clean:
-	rm -r $(BUILD)
+	rm -r $(BUILD) $(OUT_DIR)

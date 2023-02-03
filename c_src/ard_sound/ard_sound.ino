@@ -4,7 +4,7 @@
 #include <note_math.h>
 #include "../../out/out.h"
 
-#define OUTPUT_PIN 7 // digital pin 7
+#define OUTPUT_PIN 5 // digital pin 5
 #define INTERNAL_PIN 13
 #define DELAY 200
 
