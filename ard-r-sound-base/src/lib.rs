@@ -45,7 +45,7 @@ impl TryFrom<char> for PitchClass {
     type Error = ();
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
-        return Ok(match value.to_ascii_lowercase() {
+        Ok(match value.to_ascii_lowercase() {
             'a' => PitchClass::A,
             'b' => PitchClass::B,
             'c' => PitchClass::C,
@@ -54,7 +54,7 @@ impl TryFrom<char> for PitchClass {
             'f' => PitchClass::F,
             'g' => PitchClass::G,
             _ => return Err(()),
-        });
+        })
     }
 }
 

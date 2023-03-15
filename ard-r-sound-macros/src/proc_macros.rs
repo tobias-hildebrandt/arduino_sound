@@ -111,7 +111,7 @@ fn note_to_token(note: &Note) -> TokenStream {
 fn notes_to_tokens(notes: Vec<&Note>) -> Vec<TokenStream> {
     notes
         .iter()
-        .map(|note| note_to_token(&note))
+        .map(|note| note_to_token(note))
         .collect::<Vec<_>>()
 }
 

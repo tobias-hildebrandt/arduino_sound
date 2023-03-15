@@ -187,7 +187,7 @@ impl AudioGenerator {
 
         self.samples_played_in_note += 1;
 
-        return Some(amplitude as f32);
+        Some(amplitude as f32)
     }
 
     fn new(abc: ABC, samples_per_second: u32, channels: usize) -> Self {
@@ -204,13 +204,10 @@ impl AudioGenerator {
     fn fill_output<T: Sample>(&mut self, output: &mut [T]) {
         // info!("num frames: {}", output.len());
         for frame in output.chunks_mut(self.channels) {
-            let next_value = match self.generate_and_tick() {
-                Some(v) => v,
-                None => {
-                    // TODO: oneshot signal to end stream
-                    0f32
-                }
-            };
+            let next_value = self.generate_and_tick().unwrap_or({
+                // TODO: oneshot signal to end stream?
+                0f32
+            });
             // do the same thing for each channel
             for sample in frame.iter_mut() {
                 *sample = Sample::from(&next_value);
@@ -276,7 +273,7 @@ pub fn write_as_raw(abc: ABC, filename: &Path) -> Result<(), anyhow::Error> {
         }
 
         // write entire byte buffer
-        file.write(&byte_buffer)?;
+        file.write_all(&byte_buffer)?;
 
         current_samples += BUFFER_SIZE as u32;
     }

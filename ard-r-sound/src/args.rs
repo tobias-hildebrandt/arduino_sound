@@ -39,10 +39,7 @@ impl Args {
         self.input_file.clone()
     }
 
-    pub fn file_format(&self) -> Option<FileFormat> {
-        match &self.format {
-            Some(f) => Some(*f),
-            None => None,
-        }
+    pub fn file_format(&self) -> Option<&FileFormat> {
+        self.format.as_ref()
     }
 }

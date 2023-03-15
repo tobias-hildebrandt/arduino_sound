@@ -59,9 +59,7 @@ pub fn parse_abc(file_str: &str) -> Result<abc::ABC, anyhow::Error> {
                             info!("parsed info line as: key: {:?}, val: {:?}", key, val);
 
                             //make sure we have an entry in our hashtable for the char
-                            if !headers.contains_key(&key) {
-                                headers.insert(key, Vec::new());
-                            }
+                            headers.entry(key).or_insert_with(Vec::new);
                             headers.get_mut(&key).unwrap().push(val.to_string());
                         }
                         _ => info!("invalid information field: {:?}", inner.as_str()),
@@ -93,7 +91,7 @@ pub fn parse_abc(file_str: &str) -> Result<abc::ABC, anyhow::Error> {
 }
 
 fn parse_version(version: &str) -> Result<abc::Version, anyhow::Error> {
-    let mut split = version.split(".");
+    let mut split = version.split('.');
     let first = split.next();
     let second = split.next();
 
@@ -193,7 +191,7 @@ fn parse_note_pitch(note_pitch: Pair<Rule>) -> Result<parse_tree::Pitch, anyhow:
 
 fn parse_note_length(note_length: &str) -> Result<parse_tree::Length, anyhow::Error> {
     // easier just to parse as string
-    if note_length.len() == 0 {
+    if note_length.is_empty() {
         return Ok(parse_tree::Length::Default);
     }
 

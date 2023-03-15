@@ -3,21 +3,12 @@ use std::collections::HashMap;
 pub use ard_r_sound_base::*;
 
 /// Everything in an ABC file
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ABC {
     pub version: Option<Version>,
     pub headers: Headers,
     pub notes: Vec<Note>,
-}
-
-impl Default for ABC {
-    fn default() -> Self {
-        Self {
-            version: None,
-            headers: Headers::new(),
-            notes: Vec::new(),
-        }
-    }
 }
 
 impl ABC {

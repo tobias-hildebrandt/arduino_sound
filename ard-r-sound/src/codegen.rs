@@ -79,7 +79,7 @@ pub fn generate_c_header(abc: &ABC, file: &Path) -> Result<(), anyhow::Error> {
             LOOKUP_LINE!(),
             pitch_to_number(&unique.pitch),
             length_to_num(&unique.length),
-            if let Some(_) = peekable.peek() {
+            if peekable.peek().is_some() {
                 ","
             } else {
                 ""

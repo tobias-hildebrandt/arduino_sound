@@ -53,7 +53,7 @@ impl TryInto<crate::abc::PitchOrRest> for Pitch {
                         Octave::Up => 1,
                         Octave::Down => -1,
                     })
-                    .fold(0, |accum, n| accum + n);
+                    .sum();
 
                 crate::abc::PitchOrRest::Pitch { class, octave }
             }
