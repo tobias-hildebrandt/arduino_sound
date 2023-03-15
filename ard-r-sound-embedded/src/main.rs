@@ -2,8 +2,6 @@
 #![no_main]
 // enable interrupts
 #![feature(abi_avr_interrupt)]
-// allow inline asm
-#![feature(asm_experimental_arch)]
 
 use ard_r_sound_base::Note;
 
@@ -22,14 +20,14 @@ fn main() -> ! {
 
     let periphs = unsafe { peripherals::get() };
 
-    // print_song(periphs);
+    print_song(periphs);
 
     const BPM: f32 = 60.;
     const SINGLE_BEAT_SECS: f32 = BPM / 60.;
 
     periphs.setup_clock();
 
-    ufmt::uwriteln!(&mut periphs.serial, "clock setup complete").unwrap();
+    ufmt::uwriteln!(&mut periphs.serial, "clock setup complete, playing song").unwrap();
 
     loop {
         // loop over all notes
