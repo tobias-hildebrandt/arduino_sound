@@ -91,6 +91,6 @@ impl ufmt::uDisplay for F32Wrapper {
     {
         let base = self.0 as u32;
         let decimal = self.0 - (self.0 as u32) as f32;
-        ufmt::uwrite!(f, "~{}.{}", base, (decimal * 1000f32) as u32)
+        ufmt::uwrite!(f, "~({}+{}E-6)", base, (decimal * 1_000_000f32) as u32)
     }
 }

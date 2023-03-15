@@ -61,6 +61,7 @@ dependencies = [
  "ard-r-sound-base",
  "ard-r-sound-macros",
  "arduino-hal",
+ "avr-device",
  "embedded-hal",
  "micromath",
  "nb 0.1.3",
