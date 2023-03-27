@@ -61,8 +61,16 @@ impl Peripherals {
     pub fn setup_clock(&self) {
         // set up clock
         // CTC (clear timer on compare match) mode
+        // WGM10 WGM11 to both 0
         self.clock.tccr1a.write(|w| w.wgm1().bits(0b00));
+        // WGM12 WGM13 to 1, 0
         self.clock.tccr1b.write(|w| w.wgm1().bits(0b01));
+
+        // TODO: decide if this helps at all vs just toggling in the interrupt
+        //       (would need to switch to pin 9)
+        // set compare output mode on OC1A (pin 9) to toggle
+        // COM1A0 to 1, COM1A1 to 0
+        // self.clock.tccr1a.write(|w| w.com1a().bits(0b01));
 
         // enable interrupt on output control pin
         self.clock.timsk1.write(|w| w.ocie1a().set_bit());

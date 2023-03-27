@@ -186,6 +186,16 @@ one for the active duration and one for the inactive duration.
 
 ![interrupt cycle](misc/interrupt_cycle.svg)
 
+The Arduino's internal clock also allows for the clock to directly toggle
+some pins whenever there's a compare match, but each clock is linked
+to specific pins
+(see the "Timers and the Arduino" section of
+[Secrets of Arduino PWM][Secrets of Arduino PWM]).
+Because we have 2 different timings and need to alternate between them
+(by writing to specific registers), we need to use an interrupt anyway.
+Thus, I'm not sure that setting the pin to toggle on compare match
+would be that useful, given the pin restriction that it brings.
+
 ## License
 
 Unless otherwise noted, all files in this repository are released under the
@@ -203,6 +213,9 @@ any later version. (GPLv3+). See [COPYING](COPYING) for more details.
   [One explanation](https://pages.mtu.edu/~suits/NoteFreqCalcs.html),
   [another explanation](https://en.wikipedia.org/wiki/Piano_key_frequencies)
 - Using the Arduino internal clocks:
-  [In Rust](https://github.com/Rahix/avr-hal/blob/main/examples/arduino-uno/src/bin/uno-millis.rs),
-  [In C++](https://github.com/bhagman/Tone/),
+  [in Rust](https://github.com/Rahix/avr-hal/blob/main/examples/arduino-uno/src/bin/uno-millis.rs),
+  [in C++](https://github.com/bhagman/Tone/)
 - [The ATmega328P Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf)
+- [Secrets of Arduino PWM][Secrets of Arduino PWM]
+
+[Secrets of Arduino PWM]: https://docs.arduino.cc/tutorials/generic/secrets-of-arduino-pwm
